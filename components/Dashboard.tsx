@@ -11,7 +11,8 @@ import {
   LogOut, 
   Upload, 
   Activity,
-  Calendar
+  Calendar,
+  MessageSquare
 } from 'lucide-react';
 import { Climatology, AIInsight, User } from '../types';
 import { getForecast, getDayOfYear, doyToDate, formatDate } from '../utils';
@@ -139,6 +140,14 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
         </div>
         
         <div className="flex items-center gap-3">
+          <a 
+            href="https://docs.google.com/forms/d/e/1FAIpQLSdQ1QRenj1VuuH3raPdpDQLEybL3MEr4_nrjA4movsGNtpvIg/viewform?usp=sharing&ouid=102995987645792571597"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 ring-1 ring-indigo-500/20 text-indigo-300 hover:text-indigo-200 text-xs font-medium transition-all"
+          >
+            <MessageSquare size={14} /> Feedback
+          </a>
           <button 
             onClick={() => setShowUploader(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-xs font-medium transition-all"
