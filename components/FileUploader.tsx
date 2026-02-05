@@ -68,15 +68,19 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
   };
 
   return (
-    <div className="w-full max-w-2xl mx-auto p-6 bg-space-800 rounded-xl shadow-2xl border border-space-700">
-      <div className="text-center mb-6">
-        <h2 className="text-2xl font-bold text-white mb-2">Import NASA Data</h2>
-        <p className="text-gray-400 text-sm">Upload NASA POWER data (CSV/Excel) or paste content.</p>
+    <div className="w-full p-8 bg-space-900">
+      <div className="text-center mb-8">
+        <h2 className="text-2xl font-bold text-white mb-2">Ingest External Data</h2>
+        <p className="text-gray-400 text-xs font-mono uppercase tracking-wide">
+            Upload custom NASA POWER datasets (CSV/Excel)
+        </p>
       </div>
 
       <div 
-        className={`relative border-2 border-dashed rounded-lg p-8 text-center transition-all duration-200 ${
-          dragActive ? 'border-space-accent bg-space-700/50' : 'border-space-700 hover:border-space-accent/50'
+        className={`relative border-2 border-dashed rounded-xl p-10 text-center transition-all duration-300 group ${
+          dragActive 
+            ? 'border-space-cyan bg-space-cyan/10' 
+            : 'border-space-700 hover:border-space-cyan/50 hover:bg-space-800'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -90,43 +94,52 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
           onChange={handleChange}
           accept=".csv,.txt,.xlsx,.xls"
         />
-        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center">
+        <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center relative z-10">
           {isLoading ? (
-             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-space-accent mb-4"></div>
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-space-cyan mb-4"></div>
           ) : (
-             <i className="fas fa-cloud-upload-alt text-4xl text-space-accent mb-4"></i>
+             <div className="w-16 h-16 bg-space-950 rounded-full flex items-center justify-center mb-4 border border-space-700 group-hover:border-space-cyan group-hover:shadow-glow-cyan transition-all">
+                 <i className="fas fa-cloud-upload-alt text-2xl text-space-cyan"></i>
+             </div>
           )}
-          <span className="text-lg font-medium text-gray-200">
-            Drag & drop or <span className="text-space-accent underline">browse</span>
+          <span className="text-lg font-bold text-white">
+            Drop Data Stream Here
           </span>
-          <span className="text-xs text-gray-500 mt-2">Supports CSV, TXT, XLSX, XLS</span>
+          <span className="text-xs text-gray-500 mt-2 font-mono">
+            or <span className="text-space-cyan underline">browse local drive</span>
+          </span>
         </label>
+        
+        {/* Decorative Grid Background */}
+        <div className="absolute inset-0 opacity-10 pointer-events-none" 
+             style={{ backgroundImage: 'linear-gradient(#fff 1px, transparent 1px), linear-gradient(90deg, #fff 1px, transparent 1px)', backgroundSize: '20px 20px' }}>
+        </div>
       </div>
 
-      <div className="mt-6">
+      <div className="mt-8">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
             <div className="w-full border-t border-space-700"></div>
           </div>
-          <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-space-800 text-gray-500">OR PASTE DATA</span>
+          <div className="relative flex justify-center text-xs">
+            <span className="px-3 bg-space-900 text-gray-500 font-mono uppercase">Manual Override</span>
           </div>
         </div>
 
         <div className="mt-6">
           <textarea
             rows={4}
-            className="w-full bg-space-900 border border-space-700 rounded-lg p-3 text-sm text-gray-300 focus:ring-2 focus:ring-space-accent focus:border-transparent outline-none resize-none font-mono"
-            placeholder="-BEGIN HEADER-&#10;NASA/POWER Source...&#10;YEAR,DOY,T2M_RANGE,PRECTOTCORR&#10;2000,1,6.84,0.04..."
+            className="w-full bg-space-950 border border-space-700 rounded-lg p-4 text-xs text-space-cyan font-mono focus:ring-1 focus:ring-space-cyan focus:border-space-cyan outline-none resize-none transition-all placeholder-space-700"
+            placeholder="PASTE RAW DATA STREAM...&#10;-BEGIN HEADER-&#10;NASA/POWER Source...&#10;YEAR,DOY,T2M_RANGE,PRECTOTCORR"
             value={pasteContent}
             onChange={(e) => setPasteContent(e.target.value)}
           ></textarea>
           <button
             onClick={handlePasteSubmit}
             disabled={!pasteContent}
-            className="mt-3 w-full bg-space-accent text-space-900 font-bold py-2 px-4 rounded-lg hover:bg-white transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="mt-4 w-full bg-space-800 hover:bg-space-700 text-white font-bold py-3 px-4 rounded-lg border border-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase text-xs tracking-widest"
           >
-            Analyze Text Data
+            Initiate Parsing Protocol
           </button>
         </div>
       </div>

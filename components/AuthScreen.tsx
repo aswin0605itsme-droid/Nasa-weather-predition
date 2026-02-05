@@ -31,60 +31,61 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-[80vh]">
-      <div className="w-full max-w-md bg-space-800 border border-space-700 rounded-2xl p-8 shadow-2xl relative overflow-hidden">
-        {/* Decorative background elements */}
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 rounded-full bg-space-accent/20 blur-3xl"></div>
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 rounded-full bg-blue-500/20 blur-3xl"></div>
+    <div className="flex items-center justify-center min-h-[80vh] relative">
+      {/* Background Glows */}
+      <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-space-accent/20 rounded-full blur-[128px] pointer-events-none"></div>
+      <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-space-cyan/20 rounded-full blur-[128px] pointer-events-none"></div>
 
+      <div className="w-full max-w-md glass-panel p-8 rounded-2xl shadow-2xl relative overflow-hidden backdrop-blur-xl border-t border-white/10 border-l border-white/5">
+        
         <div className="relative z-10">
-          <div className="text-center mb-8">
-            <div className="w-16 h-16 bg-space-900 rounded-full flex items-center justify-center mx-auto mb-4 border border-space-700 shadow-inner">
-              <i className="fas fa-meteor text-space-accent text-3xl"></i>
+          <div className="text-center mb-10">
+            <div className="w-20 h-20 bg-space-950/50 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-white/10 shadow-lg shadow-space-accent/20">
+              <i className="fas fa-meteor text-transparent bg-clip-text bg-gradient-to-br from-space-cyan to-space-accent text-4xl"></i>
             </div>
-            <h2 className="text-2xl font-bold text-white mb-2">
-              {isLogin ? 'Welcome Back' : 'Join the Mission'}
+            <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">
+              {isLogin ? 'Mission Control' : 'Initialize Access'}
             </h2>
             <p className="text-gray-400 text-sm">
               {isLogin 
-                ? 'Access your personalized weather intelligence dashboard.' 
-                : 'Start analyzing climatological data today.'}
+                ? 'Authenticate to access climatic prediction models.' 
+                : 'Request clearance for historical data archives.'}
             </p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
+          <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
-              <div>
-                <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">FULL NAME</label>
+              <div className="group">
+                <label className="block text-[10px] font-bold text-space-cyan uppercase tracking-widest mb-2 ml-1">Identity</label>
                 <input
                   type="text"
                   required={!isLogin}
-                  className="w-full bg-space-900 border border-space-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-space-accent focus:border-transparent outline-none transition-all placeholder-gray-600"
-                  placeholder="John Doe"
+                  className="w-full bg-space-950/50 border border-space-700 rounded-lg px-4 py-3 text-white focus:border-space-accent focus:ring-1 focus:ring-space-accent outline-none transition-all placeholder-gray-700 group-hover:border-space-600"
+                  placeholder="Commander Name"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                 />
               </div>
             )}
             
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">EMAIL ADDRESS</label>
+            <div className="group">
+              <label className="block text-[10px] font-bold text-space-cyan uppercase tracking-widest mb-2 ml-1">Comms ID</label>
               <input
                 type="email"
                 required
-                className="w-full bg-space-900 border border-space-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-space-accent focus:border-transparent outline-none transition-all placeholder-gray-600"
-                placeholder="astronaut@nasa.gov"
+                className="w-full bg-space-950/50 border border-space-700 rounded-lg px-4 py-3 text-white focus:border-space-accent focus:ring-1 focus:ring-space-accent outline-none transition-all placeholder-gray-700 group-hover:border-space-600"
+                placeholder="user@nasa.gov"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
               />
             </div>
 
-            <div>
-              <label className="block text-xs font-medium text-gray-400 mb-1 ml-1">PASSWORD</label>
+            <div className="group">
+              <label className="block text-[10px] font-bold text-space-cyan uppercase tracking-widest mb-2 ml-1">Access Key</label>
               <input
                 type="password"
                 required
-                className="w-full bg-space-900 border border-space-700 rounded-lg px-4 py-3 text-white focus:ring-2 focus:ring-space-accent focus:border-transparent outline-none transition-all placeholder-gray-600"
+                className="w-full bg-space-950/50 border border-space-700 rounded-lg px-4 py-3 text-white focus:border-space-accent focus:ring-1 focus:ring-space-accent outline-none transition-all placeholder-gray-700 group-hover:border-space-600"
                 placeholder="••••••••"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
@@ -94,23 +95,22 @@ const AuthScreen: React.FC<AuthScreenProps> = ({ onLogin }) => {
             <button
               type="submit"
               disabled={loading}
-              className="w-full bg-gradient-to-r from-space-accent to-white text-space-900 font-bold py-3 rounded-lg hover:shadow-lg hover:shadow-space-accent/20 transition-all transform active:scale-95 disabled:opacity-70 flex items-center justify-center"
+              className="w-full bg-gradient-to-r from-space-accent to-space-600 hover:to-space-accent text-white font-bold py-4 rounded-lg shadow-lg hover:shadow-space-accent/30 transition-all transform active:scale-[0.98] disabled:opacity-70 flex items-center justify-center uppercase tracking-widest text-sm"
             >
               {loading ? (
                 <i className="fas fa-circle-notch fa-spin"></i>
               ) : (
-                isLogin ? 'Launch Dashboard' : 'Create Account'
+                isLogin ? 'Authenticate' : 'Request Access'
               )}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-gray-400">
-            {isLogin ? "Don't have an account? " : "Already have an account? "}
+          <div className="mt-8 text-center text-xs text-gray-500">
             <button 
               onClick={() => setIsLogin(!isLogin)}
-              className="text-space-accent hover:text-white underline font-medium"
+              className="hover:text-space-cyan transition-colors font-medium border-b border-dashed border-gray-600 hover:border-space-cyan pb-0.5"
             >
-              {isLogin ? 'Sign Up' : 'Log In'}
+              {isLogin ? 'Request New Clearance' : 'Return to Login'}
             </button>
           </div>
         </div>

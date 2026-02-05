@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import AuthScreen from './components/AuthScreen';
 import Dashboard from './components/Dashboard';
 import { parseNASAData, calculateClimatology, adjustDataForLocation } from './utils';
@@ -16,6 +16,9 @@ function App() {
   const [loadingText, setLoadingText] = useState("Initializing Systems...");
   const [error, setError] = useState<string | null>(null);
 
+  // Data persistence
+  const rawDataRef = useRef<string>(NASA_CSV_DATA);
+
   const BASE_LAT = 13.1186;
 
   useEffect(() => {
@@ -29,7 +32,7 @@ function App() {
     processDataSequence(location.lat, location.lon, true);
   }, []);
 
-  const processDataSequence = async (targetLat: number, targetLon: number, isInitial: boolean = false) => {
+  const processDataSequence = async (targetLat: number, targetLon: number, isInitial: boolean = false, overrideData?: string) => {
     // Reset Error State
     setError(null);
 
@@ -37,6 +40,11 @@ function App() {
     if (!isInitial) {
         setAppState(AppState.LOADING);
         setLoadingProgress(0);
+    }
+
+    // Update raw data ref if override provided
+    if (overrideData) {
+      rawDataRef.current = overrideData;
     }
 
     // Step 1: Parse/Ingest
@@ -48,11 +56,11 @@ function App() {
     await new Promise(r => setTimeout(r, 600));
 
     try {
-      if (!NASA_CSV_DATA) {
+      const csvText = rawDataRef.current;
+      if (!csvText) {
         throw new Error("Internal Data Corruption: Source missing.");
       }
 
-      const csvText = NASA_CSV_DATA;
       let parsedData = parseNASAData(csvText);
       
       if (!parsedData || parsedData.length === 0) {
@@ -132,29 +140,33 @@ function App() {
     processDataSequence(lat, lon, false);
   };
 
+  const handleFileUpload = (csvText: string) => {
+    processDataSequence(location.lat, location.lon, false, csvText);
+  };
+
   const renderContent = () => {
     // 1. Error View
     if (error) {
       return (
         <div className="flex flex-col items-center justify-center h-[80vh] w-full max-w-md mx-auto px-6 animate-fade-in">
-          <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
-            <i className="fas fa-exclamation-triangle text-red-500 text-4xl"></i>
+          <div className="w-24 h-24 bg-space-rose/10 rounded-full flex items-center justify-center mb-6 border border-space-rose/30 shadow-glow">
+            <i className="fas fa-exclamation-triangle text-space-rose text-4xl"></i>
           </div>
           
-          <h2 className="text-2xl font-bold text-white mb-2 text-center">System Malfunction</h2>
-          <div className="bg-space-800 border border-red-900/50 p-4 rounded-lg mb-8 w-full">
-             <p className="text-red-300 text-sm text-center font-mono leading-relaxed">
+          <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">System Malfunction</h2>
+          <div className="glass-panel p-6 rounded-xl mb-8 w-full border-l-4 border-space-rose">
+             <p className="text-red-200 text-sm text-center font-mono leading-relaxed">
                 {error}
              </p>
           </div>
           
           <button 
             onClick={() => processDataSequence(location.lat, location.lon, false)}
-            className="group relative px-6 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded-lg transition-all hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
+            className="group relative px-8 py-3 bg-space-rose/20 hover:bg-space-rose/30 text-space-rose border border-space-rose/50 rounded-lg transition-all hover:shadow-glow"
           >
             <span className="flex items-center gap-2">
                <i className="fas fa-sync-alt group-hover:rotate-180 transition-transform duration-500"></i>
-               <span>Re-initialize Sequence</span>
+               <span className="font-semibold tracking-wide">REBOOT SEQUENCE</span>
             </span>
           </button>
         </div>
@@ -165,29 +177,30 @@ function App() {
     if (appState === AppState.LOADING) {
       return (
         <div className="flex flex-col items-center justify-center h-[80vh] w-full max-w-md mx-auto px-6">
-          <div className="relative w-24 h-24 mb-8">
-            <div className="absolute top-0 left-0 w-full h-full border-4 border-space-700 rounded-full"></div>
-            <div className="absolute top-0 left-0 w-full h-full border-4 border-t-space-accent rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center text-xs font-mono text-space-accent">
+          <div className="relative w-32 h-32 mb-10">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-space-800 rounded-full"></div>
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-t-space-cyan rounded-full animate-spin"></div>
+            <div className="absolute inset-0 flex items-center justify-center text-xl font-mono font-bold text-space-cyan tracking-widest">
                 {loadingProgress}%
             </div>
           </div>
           
-          <h2 className="text-2xl font-bold text-white mb-2 text-center">System Processing</h2>
-          <p className="text-gray-400 text-sm mb-6 text-center font-mono h-6">{loadingText}</p>
+          <h2 className="text-3xl font-bold text-white mb-3 text-center tracking-tight">Processing Data</h2>
+          <p className="text-space-cyan text-sm mb-8 text-center font-mono h-6 animate-pulse">{loadingText}</p>
           
-          {/* Progress Bar */}
-          <div className="w-full bg-space-800 rounded-full h-2 border border-space-700 overflow-hidden">
+          {/* Tech Progress Bar */}
+          <div className="w-full bg-space-950 rounded-full h-1.5 border border-space-700 overflow-hidden shadow-inner">
             <div 
-                className="bg-space-accent h-2 rounded-full transition-all duration-500 ease-out" 
+                className="bg-gradient-to-r from-space-accent to-space-cyan h-1.5 rounded-full transition-all duration-500 ease-out shadow-glow-cyan" 
                 style={{ width: `${loadingProgress}%` }}
             ></div>
           </div>
           
-          <div className="mt-4 flex justify-between w-full text-[10px] text-gray-600 font-mono uppercase">
+          <div className="mt-6 flex justify-between w-full text-[10px] text-gray-500 font-mono uppercase tracking-widest">
             <span>Ingestion</span>
             <span>Training</span>
-            <span>Inference</span>
+            <span>Validation</span>
+            <span>Ready</span>
           </div>
         </div>
       );
@@ -204,33 +217,45 @@ function App() {
         onLocationChange={handleLocationChange}
         onLogout={handleLogout}
         user={user}
+        onFileUpload={handleFileUpload}
       />
     );
   };
 
   return (
-    <div className="min-h-screen bg-space-900 text-gray-100 flex flex-col">
-      <nav className="border-b border-space-700 bg-space-900/50 backdrop-blur-md sticky top-0 z-50">
+    <div className="min-h-screen text-gray-100 flex flex-col font-sans selection:bg-space-cyan/30 selection:text-white">
+      {/* Navbar */}
+      <nav className="border-b border-white/5 bg-space-950/70 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center">
-              <i className="fas fa-meteor text-space-accent text-2xl mr-3"></i>
-              <span className="font-bold text-xl tracking-tight">NASA Weather<span className="text-space-accent">AI</span></span>
+          <div className="flex items-center justify-between h-20">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-space-accent to-space-cyan rounded-lg flex items-center justify-center shadow-lg shadow-space-accent/20">
+                <i className="fas fa-meteor text-white text-lg"></i>
+              </div>
+              <div>
+                <span className="font-bold text-xl tracking-tight text-white block leading-none">NASA</span>
+                <span className="text-xs text-space-cyan font-mono tracking-widest">WEATHER AI</span>
+              </div>
             </div>
-            <div className="flex items-center space-x-4">
-              <span className="text-xs text-gray-500 hidden sm:inline">Powered by Gemini & MERRA-2</span>
+            <div className="flex items-center space-x-6">
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-space-800/50 border border-white/5 text-xs text-gray-400">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                SYSTEM ONLINE
+              </div>
             </div>
           </div>
         </div>
       </nav>
 
-      <main className="flex-grow container mx-auto px-4 py-8">
+      <main className="flex-grow container mx-auto px-4 py-8 relative z-10">
         {renderContent()}
       </main>
 
-      <footer className="border-t border-space-700 py-6 mt-auto">
-        <div className="container mx-auto text-center text-gray-500 text-sm">
-          <p>&copy; {new Date().getFullYear()} NASA Weather Predictor. Data provided by NASA/POWER.</p>
+      <footer className="border-t border-white/5 py-8 mt-auto bg-space-950/50 backdrop-blur-sm">
+        <div className="container mx-auto text-center">
+          <p className="text-gray-500 text-xs tracking-wider">
+            &copy; {new Date().getFullYear()} NASA WEATHER PREDICTOR <span className="mx-2 text-space-700">|</span> POWERED BY GEMINI & MERRA-2
+          </p>
         </div>
       </footer>
     </div>

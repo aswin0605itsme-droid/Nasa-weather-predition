@@ -29,17 +29,18 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
 
   if (combinedView) {
     return (
-      <div className="bg-space-800 p-6 rounded-xl border border-space-700 shadow-lg mt-8">
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-semibold text-white flex items-center">
-            <i className="fas fa-chart-line text-purple-400 mr-2"></i>
+      <div className="glass-panel p-6 rounded-2xl shadow-2xl relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-space-rose via-space-accent to-space-cyan"></div>
+        <div className="flex justify-between items-center mb-8">
+          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+            <i className="fas fa-chart-line text-space-accent"></i>
             Integrated Weather Model
           </h3>
           <button 
             onClick={() => setCombinedView(false)}
-            className="text-xs bg-space-700 hover:bg-space-600 px-3 py-1 rounded text-gray-300 transition-colors"
+            className="text-xs bg-space-800 hover:bg-space-700 px-4 py-2 rounded-lg text-gray-300 transition-colors border border-white/10"
           >
-            Split View
+            Switch to Split View
           </button>
         </div>
         <div className="h-[400px] w-full min-h-[400px]">
@@ -47,45 +48,51 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
             <ComposedChart data={chartData}>
               <defs>
                 <linearGradient id="colorTempCombined" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ef4444" stopOpacity={0.4}/>
-                  <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                  <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.3}/>
+                  <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
                 </linearGradient>
               </defs>
-              <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
               <XAxis 
                 dataKey="date" 
-                stroke="#a0aec0" 
-                tick={{fill: '#a0aec0', fontSize: 12}} 
+                stroke="#64748b" 
+                tick={{fill: '#94a3b8', fontSize: 12}} 
                 tickLine={false}
+                axisLine={false}
+                dy={10}
               />
               <YAxis 
                 yAxisId="left"
-                stroke="#ef4444" 
-                tick={{fill: '#ef4444', fontSize: 12}} 
+                stroke="#f43f5e" 
+                tick={{fill: '#f43f5e', fontSize: 12}} 
                 tickLine={false}
+                axisLine={false}
                 unit="°C"
-                label={{ value: 'Temp (°C)', angle: -90, position: 'insideLeft', fill: '#ef4444' }}
+                dx={-10}
               />
               <YAxis 
                 yAxisId="right"
                 orientation="right"
-                stroke="#60a5fa" 
-                tick={{fill: '#60a5fa', fontSize: 12}} 
+                stroke="#22d3ee" 
+                tick={{fill: '#22d3ee', fontSize: 12}} 
                 tickLine={false}
+                axisLine={false}
                 unit="mm"
-                label={{ value: 'Precip (mm)', angle: 90, position: 'insideRight', fill: '#60a5fa' }}
+                dx={10}
               />
               <Tooltip 
-                contentStyle={{ backgroundColor: '#1a202c', borderColor: '#2d3748', color: '#fff' }}
+                contentStyle={{ backgroundColor: '#0B0E17', borderColor: '#334155', color: '#fff', borderRadius: '12px', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.5)' }}
                 itemStyle={{ color: '#fff' }}
+                cursor={{ stroke: '#6366f1', strokeWidth: 1, strokeDasharray: '5 5' }}
               />
-              <Legend />
+              <Legend wrapperStyle={{ paddingTop: '20px' }}/>
               <Area 
                 yAxisId="left"
                 type="monotone" 
                 dataKey="temp" 
                 name="Temperature" 
-                stroke="#ef4444" 
+                stroke="#f43f5e" 
+                strokeWidth={3}
                 fillOpacity={1} 
                 fill="url(#colorTempCombined)" 
               />
@@ -93,8 +100,8 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                 yAxisId="right"
                 dataKey="precip" 
                 name="Precipitation" 
-                fill="#60a5fa" 
-                barSize={20}
+                fill="#22d3ee" 
+                barSize={12}
                 radius={[4, 4, 0, 0]}
               />
             </ComposedChart>
@@ -105,63 +112,60 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
   }
 
   return (
-    <div className="mt-8">
-      <div className="flex justify-end mb-4">
+    <div className="mt-8 animate-fade-in">
+      <div className="flex justify-end mb-6">
         <button 
           onClick={() => setCombinedView(true)}
-          className="text-xs flex items-center bg-space-700 hover:bg-space-600 px-3 py-1.5 rounded text-white transition-colors shadow-lg border border-space-600"
+          className="text-xs flex items-center bg-space-800 hover:bg-space-700 px-4 py-2 rounded-lg text-white transition-all shadow-lg border border-white/10 hover:border-space-accent/50"
         >
-          <i className="fas fa-layer-group mr-2"></i> Combine Charts
+          <i className="fas fa-layer-group mr-2 text-space-accent"></i> Combine Data Streams
         </button>
       </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Temperature Chart */}
-        <div className="bg-space-800 p-6 rounded-xl border border-space-700 shadow-lg">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <i className="fas fa-temperature-high text-red-400 mr-2"></i>
-            Historical Temperature
+        <div className="glass-panel p-6 rounded-2xl relative">
+          <h3 className="text-lg font-bold text-white mb-6 flex items-center">
+            <div className="w-2 h-2 rounded-full bg-space-rose mr-3 shadow-[0_0_10px_#f43f5e]"></div>
+            Thermal Projection
           </h3>
           <div className="h-[300px] w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <ComposedChart data={chartData}>
                 <defs>
                   <linearGradient id="colorTemp" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#ef4444" stopOpacity={0.8}/>
-                    <stop offset="95%" stopColor="#ef4444" stopOpacity={0}/>
+                    <stop offset="5%" stopColor="#f43f5e" stopOpacity={0.4}/>
+                    <stop offset="95%" stopColor="#f43f5e" stopOpacity={0}/>
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  stroke="#a0aec0" 
-                  tick={{fill: '#a0aec0', fontSize: 12}} 
+                  stroke="#64748b" 
+                  tick={{fill: '#94a3b8', fontSize: 11}} 
                   tickLine={false}
+                  axisLine={false}
+                  dy={10}
                 />
                 <YAxis 
-                  stroke="#a0aec0" 
-                  tick={{fill: '#a0aec0', fontSize: 12}} 
+                  stroke="#94a3b8" 
+                  tick={{fill: '#94a3b8', fontSize: 11}} 
                   tickLine={false}
+                  axisLine={false}
                   unit="°C"
+                  dx={-10}
                 />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a202c', borderColor: '#2d3748', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#0B0E17', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
                 />
-                <Legend />
                 <Area 
                   type="monotone" 
                   dataKey="temp" 
-                  name="Avg Temp Range" 
-                  stroke="#ef4444" 
+                  name="Avg Temp" 
+                  stroke="#f43f5e" 
+                  strokeWidth={3}
                   fillOpacity={1} 
                   fill="url(#colorTemp)" 
-                />
-                <Line 
-                  type="monotone" 
-                  dataKey="temp" 
-                  stroke="#fca5a5" 
-                  strokeWidth={2} 
-                  dot={{ r: 4, fill: '#ef4444', strokeWidth: 2, stroke: '#fff' }} 
                 />
               </ComposedChart>
             </ResponsiveContainer>
@@ -169,37 +173,40 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
         </div>
 
         {/* Precipitation Chart */}
-        <div className="bg-space-800 p-6 rounded-xl border border-space-700 shadow-lg">
-          <h3 className="text-xl font-semibold text-white mb-4 flex items-center">
-            <i className="fas fa-cloud-rain text-blue-400 mr-2"></i>
-            Historical Precipitation
+        <div className="glass-panel p-6 rounded-2xl relative">
+          <h3 className="text-lg font-bold text-white mb-6 flex items-center">
+            <div className="w-2 h-2 rounded-full bg-space-cyan mr-3 shadow-[0_0_10px_#22d3ee]"></div>
+            Precipitation Volume
           </h3>
           <div className="h-[300px] w-full min-h-[300px]">
             <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
               <ComposedChart data={chartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#2d3748" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
                 <XAxis 
                   dataKey="date" 
-                  stroke="#a0aec0" 
-                  tick={{fill: '#a0aec0', fontSize: 12}} 
+                  stroke="#64748b" 
+                  tick={{fill: '#94a3b8', fontSize: 11}} 
                   tickLine={false}
+                  axisLine={false}
+                  dy={10}
                 />
                 <YAxis 
-                  stroke="#a0aec0" 
-                  tick={{fill: '#a0aec0', fontSize: 12}} 
+                  stroke="#94a3b8" 
+                  tick={{fill: '#94a3b8', fontSize: 11}} 
                   tickLine={false}
+                  axisLine={false}
                   unit="mm"
+                  dx={-10}
                 />
                 <Tooltip 
-                  contentStyle={{ backgroundColor: '#1a202c', borderColor: '#2d3748', color: '#fff' }}
+                  contentStyle={{ backgroundColor: '#0B0E17', borderColor: '#334155', color: '#fff', borderRadius: '8px' }}
                   itemStyle={{ color: '#fff' }}
                 />
-                <Legend />
                 <Bar 
                   dataKey="precip" 
-                  name="Avg Precipitation" 
-                  fill="#60a5fa" 
-                  barSize={30}
+                  name="Precipitation" 
+                  fill="#22d3ee" 
+                  barSize={24}
                   radius={[4, 4, 0, 0]}
                 />
               </ComposedChart>
