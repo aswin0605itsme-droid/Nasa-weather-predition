@@ -3,3 +3,5 @@ cd Nasa-weather-prediction
 Install DependenciesBashnpm install
 Configure Environment VariablesCreate a .env.local file in the root directory:Code snippetVITE_GEMINI_API_KEY=your_api_key_here
 Run Development ServerBashnpm run dev
+👨‍💻 Author
+Aswin R 1st Year B.E. CSE Student Vel Tech Multi Tech College
