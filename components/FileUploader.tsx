@@ -68,7 +68,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
   };
 
   return (
-    <div className="w-full p-8 bg-space-900">
+    <div className="w-full p-8 bg-slate-900/50">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-bold text-white mb-2">Ingest External Data</h2>
         <p className="text-gray-400 text-xs font-mono uppercase tracking-wide">
@@ -79,8 +79,8 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
       <div 
         className={`relative border-2 border-dashed rounded-xl p-10 text-center transition-all duration-300 group ${
           dragActive 
-            ? 'border-space-cyan bg-space-cyan/10' 
-            : 'border-space-700 hover:border-space-cyan/50 hover:bg-space-800'
+            ? 'border-cyan-400 bg-cyan-400/10' 
+            : 'border-slate-700 hover:border-cyan-400/50 hover:bg-slate-800'
         }`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
@@ -96,17 +96,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
         />
         <label htmlFor="file-upload" className="cursor-pointer flex flex-col items-center relative z-10">
           {isLoading ? (
-             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-space-cyan mb-4"></div>
+             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400 mb-4"></div>
           ) : (
-             <div className="w-16 h-16 bg-space-950 rounded-full flex items-center justify-center mb-4 border border-space-700 group-hover:border-space-cyan group-hover:shadow-glow-cyan transition-all">
-                 <i className="fas fa-cloud-upload-alt text-2xl text-space-cyan"></i>
+             <div className="w-16 h-16 bg-slate-900 rounded-full flex items-center justify-center mb-4 border border-slate-700 group-hover:border-cyan-400 group-hover:shadow-[0_0_20px_rgba(34,211,238,0.3)] transition-all">
+                 <i className="fas fa-cloud-upload-alt text-2xl text-cyan-400"></i>
              </div>
           )}
           <span className="text-lg font-bold text-white">
             Drop Data Stream Here
           </span>
           <span className="text-xs text-gray-500 mt-2 font-mono">
-            or <span className="text-space-cyan underline">browse local drive</span>
+            or <span className="text-cyan-400 underline">browse local drive</span>
           </span>
         </label>
         
@@ -119,17 +119,17 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
       <div className="mt-8">
         <div className="relative">
           <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-space-700"></div>
+            <div className="w-full border-t border-slate-700"></div>
           </div>
           <div className="relative flex justify-center text-xs">
-            <span className="px-3 bg-space-900 text-gray-500 font-mono uppercase">Manual Override</span>
+            <span className="px-3 bg-slate-900 text-gray-500 font-mono uppercase">Manual Override</span>
           </div>
         </div>
 
         <div className="mt-6">
           <textarea
             rows={4}
-            className="w-full bg-space-950 border border-space-700 rounded-lg p-4 text-xs text-space-cyan font-mono focus:ring-1 focus:ring-space-cyan focus:border-space-cyan outline-none resize-none transition-all placeholder-space-700"
+            className="w-full bg-slate-950 border border-slate-700 rounded-lg p-4 text-xs text-cyan-400 font-mono focus:ring-1 focus:ring-cyan-400 focus:border-cyan-400 outline-none resize-none transition-all placeholder-slate-700"
             placeholder="PASTE RAW DATA STREAM...&#10;-BEGIN HEADER-&#10;NASA/POWER Source...&#10;YEAR,DOY,T2M_RANGE,PRECTOTCORR"
             value={pasteContent}
             onChange={(e) => setPasteContent(e.target.value)}
@@ -137,7 +137,7 @@ const FileUploader: React.FC<FileUploaderProps> = ({ onDataLoaded }) => {
           <button
             onClick={handlePasteSubmit}
             disabled={!pasteContent}
-            className="mt-4 w-full bg-space-800 hover:bg-space-700 text-white font-bold py-3 px-4 rounded-lg border border-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase text-xs tracking-widest"
+            className="mt-4 w-full bg-slate-800 hover:bg-slate-700 text-white font-bold py-3 px-4 rounded-lg border border-white/10 transition-all disabled:opacity-50 disabled:cursor-not-allowed uppercase text-xs tracking-widest"
           >
             Initiate Parsing Protocol
           </button>

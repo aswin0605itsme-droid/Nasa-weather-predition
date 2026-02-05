@@ -33,7 +33,7 @@ const LocationMap: React.FC<LocationMapProps> = ({ lat, lon, onLocationSelect })
       // Custom icon
       const icon = L.divIcon({
         className: 'custom-div-icon',
-        html: `<div style="background-color: #d0d6f9; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px #d0d6f9;"></div>`,
+        html: `<div style="background-color: #22d3ee; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 10px #22d3ee;"></div>`,
         iconSize: [12, 12],
         iconAnchor: [6, 6]
       });
@@ -69,9 +69,9 @@ const LocationMap: React.FC<LocationMapProps> = ({ lat, lon, onLocationSelect })
 
   return (
     <div className="relative w-full h-full">
-      <div ref={mapRef} className="w-full h-full rounded-xl z-0" />
-      <div className="absolute top-4 left-4 z-[400] bg-space-900/80 backdrop-blur px-3 py-1 rounded border border-space-700 text-xs text-gray-300">
-        <i className="fas fa-crosshairs mr-2 text-space-accent"></i>
+      <div ref={mapRef} className="w-full h-full rounded-xl z-0" style={{ background: 'transparent' }} />
+      <div className="absolute top-4 left-4 z-[400] glass-panel backdrop-blur px-3 py-1 rounded border border-white/10 text-xs text-gray-300">
+        <i className="fas fa-crosshairs mr-2 text-cyan-400"></i>
         Click to scan sector
       </div>
     </div>

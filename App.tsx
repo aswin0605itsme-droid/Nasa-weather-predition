@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import AuthScreen from './components/AuthScreen';
 import Dashboard from './components/Dashboard';
 import { parseNASAData, calculateClimatology, adjustDataForLocation } from './utils';
@@ -33,16 +34,13 @@ function App() {
   }, []);
 
   const processDataSequence = async (targetLat: number, targetLon: number, isInitial: boolean = false, overrideData?: string) => {
-    // Reset Error State
     setError(null);
 
-    // If not initial, reset app state to loading to show transition
     if (!isInitial) {
         setAppState(AppState.LOADING);
         setLoadingProgress(0);
     }
 
-    // Update raw data ref if override provided
     if (overrideData) {
       rawDataRef.current = overrideData;
     }
@@ -52,7 +50,6 @@ function App() {
     setLoadingText(isNewLocation ? `Acquiring Sector Data (${targetLat.toFixed(2)}, ${targetLon.toFixed(2)})...` : "Parsing NASA MERRA-2 Dataset...");
     setLoadingProgress(10);
     
-    // Simulate network/processing delay
     await new Promise(r => setTimeout(r, 600));
 
     try {
@@ -74,7 +71,6 @@ function App() {
           await new Promise(r => setTimeout(r, 500));
           
           try {
-            // Modify data based on new location to simulate "local" history
             parsedData = adjustDataForLocation(parsedData, BASE_LAT, targetLat);
           } catch (simError) {
              console.error("Simulation error", simError);
@@ -87,13 +83,12 @@ function App() {
       // Step 3: Training
       setLoadingText("Training Linear Regression Models...");
       setLoadingProgress(70);
-      await new Promise(r => setTimeout(r, 400)); // Allow UI to paint
+      await new Promise(r => setTimeout(r, 400)); 
 
       // Step 4: Optimization
       setLoadingText("Optimizing for Seasonal Seasonality...");
       setLoadingProgress(90);
       
-      // Heavy calculation wrapped in timeout to allow UI update
       setTimeout(() => {
           try {
             const clim = calculateClimatology(parsedData);
@@ -104,7 +99,6 @@ function App() {
             setLoadingProgress(100);
             setLoadingText("System Ready.");
             
-            // Small delay before showing dashboard
             setTimeout(() => {
                setAppState(AppState.AUTH); 
             }, 400);
@@ -136,7 +130,6 @@ function App() {
 
   const handleLocationChange = (lat: number, lon: number) => {
     setLocation({ lat, lon });
-    // Trigger re-calculation sequence for the new location
     processDataSequence(lat, lon, false);
   };
 
@@ -145,16 +138,19 @@ function App() {
   };
 
   const renderContent = () => {
-    // 1. Error View
     if (error) {
       return (
-        <div className="flex flex-col items-center justify-center h-[80vh] w-full max-w-md mx-auto px-6 animate-fade-in">
-          <div className="w-24 h-24 bg-space-rose/10 rounded-full flex items-center justify-center mb-6 border border-space-rose/30 shadow-glow">
-            <i className="fas fa-exclamation-triangle text-space-rose text-4xl"></i>
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }} 
+          animate={{ opacity: 1, scale: 1 }}
+          className="flex flex-col items-center justify-center h-[80vh] w-full max-w-md mx-auto px-6"
+        >
+          <div className="w-24 h-24 bg-red-500/10 rounded-full flex items-center justify-center mb-6 border border-red-500/30 shadow-[0_0_30px_rgba(239,68,68,0.2)]">
+            <i className="fas fa-exclamation-triangle text-red-500 text-4xl"></i>
           </div>
           
           <h2 className="text-2xl font-bold text-white mb-2 text-center tracking-tight">System Malfunction</h2>
-          <div className="glass-panel p-6 rounded-xl mb-8 w-full border-l-4 border-space-rose">
+          <div className="glass-panel p-6 rounded-xl mb-8 w-full border-l-4 border-l-red-500">
              <p className="text-red-200 text-sm text-center font-mono leading-relaxed">
                 {error}
              </p>
@@ -162,47 +158,56 @@ function App() {
           
           <button 
             onClick={() => processDataSequence(location.lat, location.lon, false)}
-            className="group relative px-8 py-3 bg-space-rose/20 hover:bg-space-rose/30 text-space-rose border border-space-rose/50 rounded-lg transition-all hover:shadow-glow"
+            className="group relative px-8 py-3 bg-red-500/20 hover:bg-red-500/30 text-red-400 border border-red-500/50 rounded-lg transition-all hover:shadow-[0_0_20px_rgba(239,68,68,0.4)]"
           >
             <span className="flex items-center gap-2">
                <i className="fas fa-sync-alt group-hover:rotate-180 transition-transform duration-500"></i>
                <span className="font-semibold tracking-wide">REBOOT SEQUENCE</span>
             </span>
           </button>
-        </div>
+        </motion.div>
       );
     }
 
-    // 2. Loading View
     if (appState === AppState.LOADING) {
       return (
-        <div className="flex flex-col items-center justify-center h-[80vh] w-full max-w-md mx-auto px-6">
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="flex flex-col items-center justify-center h-[80vh] w-full max-w-md mx-auto px-6"
+        >
           <div className="relative w-32 h-32 mb-10">
-            <div className="absolute top-0 left-0 w-full h-full border-4 border-space-800 rounded-full"></div>
-            <div className="absolute top-0 left-0 w-full h-full border-4 border-t-space-cyan rounded-full animate-spin"></div>
-            <div className="absolute inset-0 flex items-center justify-center text-xl font-mono font-bold text-space-cyan tracking-widest">
+            <div className="absolute top-0 left-0 w-full h-full border-4 border-blue-900/30 rounded-full"></div>
+            <div 
+              className="absolute top-0 left-0 w-full h-full border-4 border-t-cyan-400 rounded-full animate-spin"
+              style={{ borderRightColor: 'transparent', borderBottomColor: 'transparent' }}
+            ></div>
+            <div className="absolute inset-0 flex items-center justify-center text-xl font-mono font-bold text-cyan-400 tracking-widest">
                 {loadingProgress}%
             </div>
           </div>
           
           <h2 className="text-3xl font-bold text-white mb-3 text-center tracking-tight">Processing Data</h2>
-          <p className="text-space-cyan text-sm mb-8 text-center font-mono h-6 animate-pulse">{loadingText}</p>
+          <p className="text-cyan-400/80 text-sm mb-8 text-center font-mono h-6 animate-pulse">{loadingText}</p>
           
           {/* Tech Progress Bar */}
-          <div className="w-full bg-space-950 rounded-full h-1.5 border border-space-700 overflow-hidden shadow-inner">
-            <div 
-                className="bg-gradient-to-r from-space-accent to-space-cyan h-1.5 rounded-full transition-all duration-500 ease-out shadow-glow-cyan" 
-                style={{ width: `${loadingProgress}%` }}
-            ></div>
+          <div className="w-full bg-slate-900 rounded-full h-1.5 border border-slate-700 overflow-hidden shadow-inner">
+            <motion.div 
+                className="bg-gradient-to-r from-indigo-500 to-cyan-400 h-1.5 rounded-full shadow-[0_0_10px_rgba(34,211,238,0.5)]" 
+                initial={{ width: 0 }}
+                animate={{ width: `${loadingProgress}%` }}
+                transition={{ duration: 0.5 }}
+            ></motion.div>
           </div>
           
-          <div className="mt-6 flex justify-between w-full text-[10px] text-gray-500 font-mono uppercase tracking-widest">
+          <div className="mt-6 flex justify-between w-full text-[10px] text-slate-500 font-mono uppercase tracking-widest">
             <span>Ingestion</span>
             <span>Training</span>
             <span>Validation</span>
             <span>Ready</span>
           </div>
-        </div>
+        </motion.div>
       );
     }
 
@@ -223,23 +228,23 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen text-gray-100 flex flex-col font-sans selection:bg-space-cyan/30 selection:text-white">
-      {/* Navbar */}
-      <nav className="border-b border-white/5 bg-space-950/70 backdrop-blur-md sticky top-0 z-50">
+    <div className="min-h-screen text-gray-100 flex flex-col font-sans selection:bg-cyan-500/30 selection:text-white">
+      {/* Navbar with Glassmorphism */}
+      <nav className="glass-panel border-b-0 sticky top-0 z-50 rounded-b-2xl mx-4 mt-2">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-20">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-gradient-to-br from-space-accent to-space-cyan rounded-lg flex items-center justify-center shadow-lg shadow-space-accent/20">
+              <div className="w-10 h-10 bg-gradient-to-br from-indigo-500 to-cyan-500 rounded-lg flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)]">
                 <i className="fas fa-meteor text-white text-lg"></i>
               </div>
               <div>
                 <span className="font-bold text-xl tracking-tight text-white block leading-none">NASA</span>
-                <span className="text-xs text-space-cyan font-mono tracking-widest">WEATHER AI</span>
+                <span className="text-xs text-cyan-400 font-mono tracking-widest">WEATHER AI</span>
               </div>
             </div>
             <div className="flex items-center space-x-6">
-              <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-space-800/50 border border-white/5 text-xs text-gray-400">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+              <div className="hidden sm:flex items-center gap-2 px-3 py-1 rounded-full bg-slate-900/50 border border-white/10 text-xs text-gray-400 shadow-inner">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_#22c55e]"></div>
                 SYSTEM ONLINE
               </div>
             </div>
@@ -248,13 +253,15 @@ function App() {
       </nav>
 
       <main className="flex-grow container mx-auto px-4 py-8 relative z-10">
-        {renderContent()}
+        <AnimatePresence mode="wait">
+          {renderContent()}
+        </AnimatePresence>
       </main>
 
-      <footer className="border-t border-white/5 py-8 mt-auto bg-space-950/50 backdrop-blur-sm">
+      <footer className="border-t border-white/5 py-8 mt-auto bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto text-center">
-          <p className="text-gray-500 text-xs tracking-wider">
-            &copy; {new Date().getFullYear()} NASA WEATHER PREDICTOR <span className="mx-2 text-space-700">|</span> POWERED BY GEMINI & MERRA-2
+          <p className="text-slate-500 text-xs tracking-wider">
+            &copy; {new Date().getFullYear()} NASA WEATHER PREDICTOR <span className="mx-2 text-slate-700">|</span> POWERED BY GEMINI & MERRA-2
           </p>
         </div>
       </footer>

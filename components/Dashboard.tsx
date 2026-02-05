@@ -1,10 +1,25 @@
 import React, { useEffect, useState, useMemo } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { 
+  Thermometer, 
+  CloudRain, 
+  Wind, 
+  Droplets, 
+  Map as MapIcon, 
+  Bot, 
+  ArrowRight, 
+  LogOut, 
+  Upload, 
+  Activity,
+  Calendar
+} from 'lucide-react';
 import { Climatology, AIInsight, User } from '../types';
 import { getForecast, getDayOfYear, doyToDate, formatDate } from '../utils';
 import WeatherCharts from './WeatherCharts';
 import { fetchWeatherInsights } from '../services/geminiService';
 import LocationMap from './LocationMap';
 import FileUploader from './FileUploader';
+import WeatherCard from './WeatherCard';
 import {
   AreaChart,
   Area,
@@ -24,50 +39,15 @@ interface DashboardProps {
   onFileUpload: (data: string) => void;
 }
 
-// Helper to generate simulated diurnal cycle data for the chart
-const generateDiurnalData = (baseTemp: number, currentTemp?: number) => {
-  const data = [];
-  const currentHour = new Date().getHours();
-  
-  // Heuristic: Temp swings ~10°C daily. Lowest at 4AM, Highest at 2PM (14:00)
-  const amplitude = 5; 
-  
-  // Function to get normalized cycle (-1 to 1) based on hour, peak at 14:00
-  const getCycle = (h: number) => Math.sin(((h - 8) / 24) * 2 * Math.PI);
-  
-  // Calculate offset if we have real-time data
-  let realTimeOffset = 0;
-  if (currentTemp !== undefined) {
-      const modelAtCurrentHour = baseTemp + (amplitude * getCycle(currentHour));
-      realTimeOffset = currentTemp - modelAtCurrentHour;
-  }
-
-  for (let i = 0; i <= 24; i += 3) {
-    const hourLabel = `${i.toString().padStart(2, '0')}:00`;
-    const cycleVal = getCycle(i);
-    const historical = baseTemp + (amplitude * cycleVal);
-    // Apply the known offset to the whole curve to show the trend difference
-    const actual = currentTemp !== undefined ? historical + realTimeOffset : null;
-
-    data.push({
-      time: hourLabel,
-      Historical: parseFloat(historical.toFixed(1)),
-      Actual: actual ? parseFloat(actual.toFixed(1)) : null,
-    });
-  }
-  return data;
-};
-
 const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocationChange, onLogout, user, onFileUpload }) => {
   const [todayData, setTodayData] = useState<Climatology | null>(null);
   const [forecast, setForecast] = useState<Climatology[]>([]);
   const [insight, setInsight] = useState<AIInsight | null>(null);
   const [loadingAI, setLoadingAI] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeLocationName, setActiveLocationName] = useState('Selected Sector');
+  const [activeLocationName, setActiveLocationName] = useState('Sector 7G');
   const [showUploader, setShowUploader] = useState(false);
 
-  // Load historical data for today
   useEffect(() => {
     const todayDOY = getDayOfYear(new Date());
     const todayClim = climatology.get(todayDOY);
@@ -79,7 +59,6 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     }
   }, [climatology]);
 
-  // Fetch AI insight when location or date changes
   useEffect(() => {
     if (!todayData) return;
 
@@ -100,10 +79,8 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!todayData || !searchQuery.trim()) return;
-
     setLoadingAI(true);
     setActiveLocationName(searchQuery);
-    
     fetchWeatherInsights(
         location.lat,
         location.lon,
@@ -117,367 +94,245 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
       });
   };
 
-  const calculateAccuracy = () => {
-    if (!insight?.currentTemp || !todayData) return null;
-    
-    const diff = Math.abs(todayData.avgTemp - insight.currentTemp);
-    // Formula: 100 - percent_error
-    let accuracy = 100 - (diff / Math.abs(todayData.avgTemp || 1)) * 100;
-    if (accuracy < 0) accuracy = 0;
-    if (accuracy > 100) accuracy = 100;
-    
-    return {
-      score: Math.round(accuracy),
-      diff: parseFloat(diff.toFixed(1)),
-      direction: insight.currentTemp > todayData.avgTemp ? 'warmer' : 'cooler'
-    };
-  };
-
-  const diurnalData = useMemo(() => {
-    if (!todayData) return [];
-    return generateDiurnalData(todayData.avgTemp, insight?.currentTemp);
-  }, [todayData, insight]);
-
   const handleUploadComplete = (csvData: string) => {
     setShowUploader(false);
     onFileUpload(csvData);
   };
 
+  // Helper for Bento Grid responsiveness
+  const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 max-w-[1600px] mx-auto p-4 md:p-8";
+
   if (!todayData) return (
-    <div className="flex items-center justify-center h-64 text-space-cyan font-mono animate-pulse">
-        Calculating Climatology...
+    <div className="flex h-screen items-center justify-center bg-slate-950 text-cyan-400 font-mono tracking-widest animate-pulse">
+        INITIALIZING ORBITAL MODEL...
     </div>
   );
 
-  const currentDate = formatDate(new Date());
-  const accuracyMetrics = calculateAccuracy();
-
   return (
-    <div className="animate-fade-in pb-12 relative">
+    <div className="min-h-screen bg-slate-950 text-slate-200 selection:bg-cyan-500/30">
       {/* Upload Modal */}
-      {showUploader && (
-        <div className="fixed inset-0 bg-space-950/90 backdrop-blur-md z-[100] flex items-center justify-center p-4">
-          <div className="relative w-full max-w-2xl bg-space-900 border border-space-700 rounded-2xl shadow-2xl overflow-hidden">
-            <button 
-              onClick={() => setShowUploader(false)}
-              className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors p-2"
-            >
-              <i className="fas fa-times text-xl"></i>
-            </button>
-            <FileUploader onDataLoaded={handleUploadComplete} />
-          </div>
-        </div>
-      )}
+      <AnimatePresence>
+        {showUploader && (
+          <motion.div 
+            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-950/80 backdrop-blur-md z-50 flex items-center justify-center p-4"
+          >
+            <div className="w-full max-w-2xl relative">
+              <button onClick={() => setShowUploader(false)} className="absolute -top-12 right-0 text-slate-400 hover:text-white">Close</button>
+              <WeatherCard className="bg-slate-900/90">
+                <FileUploader onDataLoaded={handleUploadComplete} />
+              </WeatherCard>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      {/* Header Bar */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-end mb-10 gap-6">
+      {/* Top Bar */}
+      <header className="px-8 py-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <div>
-          <h1 className="text-4xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-white to-gray-400 tracking-tight">Mission Command</h1>
-          <p className="text-gray-400 mt-2 text-sm font-medium">
-            Welcome back, <span className="text-space-cyan">{user.name}</span>. Systems nominal.
-          </p>
+          <div className="flex items-center gap-3 mb-1">
+            <div className="h-2 w-2 rounded-full bg-emerald-500 shadow-[0_0_10px_#10b981] animate-pulse"></div>
+            <span className="text-[10px] font-mono text-emerald-500 uppercase tracking-widest">System Nominal</span>
+          </div>
+          <h1 className="text-2xl font-bold text-white tracking-tight">Mission Command</h1>
+          <p className="text-slate-500 text-sm">Welcome back, <span className="text-cyan-400">{user.name}</span></p>
         </div>
         
-        <div className="flex items-center gap-4 w-full md:w-auto">
-            <a 
-              href="https://docs.google.com/forms/d/e/1FAIpQLSdQ1QRenj1VuuH3raPdpDQLEybL3MEr4_nrjA4movsGNtpvIg/viewform?usp=publish-editor" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="glass-panel hover:bg-space-800 text-gray-300 px-5 py-2.5 rounded-lg text-sm transition-all whitespace-nowrap flex items-center gap-2 hover:text-white group"
-            >
-              <i className="fas fa-comment-alt text-space-accent group-hover:scale-110 transition-transform"></i> Feedback
-            </a>
-            <button 
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowUploader(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-xs font-medium transition-all"
+          >
+            <Upload size={14} /> Import Data
+          </button>
+          <button 
             onClick={onLogout}
-            className="px-5 py-2.5 rounded-lg text-sm bg-space-rose/10 text-space-rose border border-space-rose/30 hover:bg-space-rose/20 transition-all hover:shadow-[0_0_15px_rgba(244,63,94,0.3)] whitespace-nowrap"
-            >
-            <i className="fas fa-sign-out-alt mr-2"></i> Logout
-            </button>
+            className="flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 hover:bg-rose-500/20 ring-1 ring-rose-500/20 text-rose-400 text-xs font-medium transition-all"
+          >
+            <LogOut size={14} /> Abort
+          </button>
         </div>
-      </div>
+      </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-8">
+      {/* Bento Grid Layout */}
+      <main className={gridClasses}>
         
-        {/* Left Column: Map & Historical Data (4 cols) */}
-        <div className="lg:col-span-4 space-y-6">
-           {/* Map Card */}
-           <div className="glass-panel rounded-2xl overflow-hidden h-72 relative group transition-all duration-300 shadow-lg">
-             <LocationMap 
-               lat={location.lat} 
-               lon={location.lon} 
-               onLocationSelect={onLocationChange} 
-             />
-             <div className="absolute top-4 right-4 bg-space-950/90 backdrop-blur-md text-[10px] font-mono text-space-cyan px-3 py-1.5 rounded border border-space-cyan/20 shadow-lg">
-                LAT: {location.lat.toFixed(4)} <br/> LON: {location.lon.toFixed(4)}
-             </div>
-             <div className="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-space-950/90 to-transparent pointer-events-none"></div>
-             <div className="absolute bottom-4 left-4 pointer-events-none">
-                <span className="text-white text-xs font-bold tracking-widest uppercase bg-space-accent/20 px-2 py-1 rounded border border-space-accent/30">
-                    Sector View
-                </span>
-             </div>
-           </div>
-
-           {/* Historical Prediction Card */}
-           <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-                <i className="fas fa-history text-6xl text-white"></i>
+        {/* Main Temperature - Large Card (4 cols, 2 rows) */}
+        <WeatherCard 
+          className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[300px] flex flex-col justify-between"
+          delay={0.1}
+        >
+          <div className="flex justify-between items-start">
+            <div>
+              <h2 className="text-sm font-mono text-cyan-400 uppercase tracking-widest mb-1">Projected Temp</h2>
+              <div className="text-xs text-slate-500">Historical Regression Model</div>
             </div>
-            
-            <div className="flex justify-between items-start mb-6">
-              <div>
-                  <h3 className="text-gray-400 text-xs font-bold uppercase tracking-widest mb-1">Historical Prediction</h3>
-                  <div className="text-space-cyan text-[10px] font-mono">MODEL: MERRA-2 REGRESSION</div>
-              </div>
-            </div>
-
-            <div className="flex items-baseline gap-1">
-              <span className="text-5xl font-bold text-white tracking-tighter">{todayData.avgTemp.toFixed(1)}</span>
-              <span className="text-2xl text-gray-400 font-light">°C</span>
-            </div>
-            
-            <div className="mt-6 flex items-center justify-between p-3 bg-space-900/50 rounded-lg border border-white/5">
-              <div className="flex items-center text-blue-400">
-                <div className="w-8 h-8 rounded-full bg-blue-500/10 flex items-center justify-center mr-3">
-                    <i className="fas fa-tint"></i>
-                </div>
-                <div>
-                    <span className="block text-xs text-gray-500 uppercase font-bold">Precipitation</span>
-                    <span className="font-mono text-lg text-white">{todayData.avgPrecip} <span className="text-xs text-gray-500">mm</span></span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="mt-4 pt-4 border-t border-white/5 flex items-center gap-2 text-xs text-gray-500">
-                <i className="fas fa-database"></i>
-                <span>Based on {todayData.count} years of orbital data.</span>
-            </div>
+            <Thermometer className="text-rose-500" size={24} />
           </div>
-        </div>
-
-        {/* Right Column: AI Analysis & Accuracy (8 cols) */}
-        <div className="lg:col-span-8 space-y-6">
           
-          {/* AI Insight Card */}
-          <div className="glass-panel rounded-2xl p-8 relative min-h-[280px] flex flex-col justify-between border-t-2 border-t-space-accent/50">
-            {/* Background Decoration */}
-            <div className="absolute -top-24 -right-24 w-64 h-64 bg-space-accent/10 rounded-full blur-3xl pointer-events-none"></div>
+          <div className="mt-8">
+            <div className="flex items-baseline gap-4">
+              <span className="text-8xl font-bold text-white tracking-tighter shadow-cyan-500/50 drop-shadow-2xl">
+                {todayData.avgTemp.toFixed(1)}°
+              </span>
+              <div className="flex flex-col">
+                <span className="text-2xl text-slate-400">C</span>
+                <span className="text-xs text-emerald-400 font-mono">▲ 1.2% vs Avg</span>
+              </div>
+            </div>
+          </div>
 
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-6 gap-4 relative z-10">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-space-accent to-purple-600 flex items-center justify-center shadow-lg shadow-purple-500/20">
-                    <i className="fas fa-robot text-white"></i>
+          <div className="mt-auto pt-6 grid grid-cols-3 gap-4 border-t border-white/5">
+             <div>
+                <span className="block text-xs text-slate-500 uppercase">Precip</span>
+                <span className="text-lg font-medium text-blue-400">{todayData.avgPrecip} <span className="text-xs">mm</span></span>
+             </div>
+             <div>
+                <span className="block text-xs text-slate-500 uppercase">Humidity</span>
+                <span className="text-lg font-medium text-slate-300">~64%</span>
+             </div>
+             <div>
+                <span className="block text-xs text-slate-500 uppercase">Wind</span>
+                <span className="text-lg font-medium text-slate-300">12 <span className="text-xs">km/h</span></span>
+             </div>
+          </div>
+        </WeatherCard>
+
+        {/* Map - Medium Card (4 cols, 2 rows) */}
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 relative group rounded-3xl overflow-hidden ring-1 ring-white/10 bg-slate-900">
+          <LocationMap 
+            lat={location.lat} 
+            lon={location.lon} 
+            onLocationSelect={onLocationChange} 
+          />
+          <div className="absolute inset-0 pointer-events-none ring-1 ring-white/10 rounded-3xl z-20"></div>
+          {/* HUD Overlay */}
+          <div className="absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-mono text-slate-300">LIVE TRACKING</span>
+            </div>
+          </div>
+          <div className="absolute bottom-4 right-4 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-right">
+             <div className="text-[10px] text-slate-500 uppercase tracking-widest">Coordinates</div>
+             <div className="text-xs font-mono text-cyan-400">{location.lat.toFixed(4)}, {location.lon.toFixed(4)}</div>
+          </div>
+        </div>
+
+        {/* Gemini Insight - Wide Card (4 cols, 2 rows - vertical on mobile, stacked) */}
+        <WeatherCard 
+          className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 bg-gradient-to-br from-indigo-950/30 to-purple-950/30"
+          delay={0.2}
+        >
+          <div className="flex items-center gap-3 mb-6">
+            <div className="p-2 rounded-lg bg-indigo-500/20 text-indigo-400">
+              <Bot size={20} />
+            </div>
+            <div>
+              <h3 className="text-sm font-bold text-white">Gemini Live Intelligence</h3>
+              <p className="text-[10px] text-indigo-300 font-mono uppercase">Real-time Validation</p>
+            </div>
+          </div>
+
+          <form onSubmit={handleSearch} className="relative mb-6 group">
+            <input 
+              type="text" 
+              placeholder="Compare with location..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-900/50 border border-white/10 rounded-xl py-3 px-4 pl-4 pr-10 text-sm focus:outline-none focus:border-indigo-500 transition-all text-slate-200 placeholder-slate-600"
+            />
+            <button type="submit" className="absolute right-3 top-3 text-slate-500 hover:text-white transition-colors">
+              <ArrowRight size={16} />
+            </button>
+          </form>
+
+          <div className="space-y-4">
+            {loadingAI ? (
+              <div className="flex flex-col items-center justify-center py-8 text-slate-600">
+                <Activity className="animate-spin mb-2" />
+                <span className="text-xs font-mono">ESTABLISHING UPLINK...</span>
+              </div>
+            ) : insight ? (
+              <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-[10px] font-bold bg-white/5 px-2 py-1 rounded text-slate-400 uppercase">
+                    Target: {activeLocationName}
+                  </span>
+                  {insight.condition && (
+                    <span className="text-[10px] font-bold bg-cyan-500/10 text-cyan-300 px-2 py-1 rounded uppercase">
+                      {insight.condition}
+                    </span>
+                  )}
                 </div>
-                <div>
-                    <h3 className="text-white text-lg font-bold tracking-tight">Gemini Live Intelligence</h3>
-                    <p className="text-xs text-space-accent font-mono uppercase tracking-wider">
-                        Real-time Validation
-                    </p>
+                <p className="text-sm text-slate-300 leading-relaxed italic border-l-2 border-indigo-500/50 pl-3">
+                  "{insight.summary}"
+                </p>
+                <div className="mt-4 p-3 bg-white/5 rounded-xl border border-white/5">
+                  <div className="text-[10px] text-emerald-400 uppercase tracking-widest font-bold mb-1">Tactical Advice</div>
+                  <p className="text-xs text-slate-400">{insight.advice}</p>
                 </div>
               </div>
-              
-              <form onSubmit={handleSearch} className="flex w-full sm:w-auto relative group">
-                <input 
-                    type="text" 
-                    placeholder="Compare with City..." 
-                    className="bg-space-950/50 backdrop-blur-sm text-sm text-white px-4 py-2.5 pl-10 rounded-lg border border-space-700 focus:border-space-cyan focus:ring-1 focus:ring-space-cyan outline-none w-full sm:w-64 transition-all"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                />
-                <div className="absolute left-3 top-2.5 text-gray-500 group-focus-within:text-space-cyan transition-colors">
-                    <i className="fas fa-search"></i>
-                </div>
-              </form>
-            </div>
-            
-            <div className="relative z-10 flex-grow">
-                {loadingAI ? (
-                <div className="h-full flex flex-col items-center justify-center text-gray-500 py-8">
-                    <i className="fas fa-satellite-dish text-3xl mb-4 text-space-cyan animate-pulse"></i>
-                    <span className="font-mono text-sm tracking-widest">ESTABLISHING UPLINK...</span>
-                </div>
-                ) : insight ? (
-                <div className="space-y-4 animate-fade-in">
-                    <div className="flex items-center gap-2">
-                        <span className="text-[10px] font-bold bg-space-950 text-gray-400 px-2 py-1 rounded border border-space-800 uppercase tracking-wider">
-                            TARGET: {activeLocationName === '' ? 'STATION SECTOR' : activeLocationName}
-                        </span>
-                        {insight.condition && (
-                            <span className="text-[10px] font-bold bg-blue-500/10 text-blue-300 px-2 py-1 rounded border border-blue-500/20 uppercase tracking-wider">
-                                {insight.condition}
-                            </span>
-                        )}
-                    </div>
-                    
-                    <p className="text-white text-xl font-light leading-relaxed">
-                    "{insight.summary}"
-                    </p>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                        <div className="bg-space-950/30 rounded-lg p-4 border border-white/5">
-                            <strong className="text-space-cyan text-xs uppercase tracking-widest block mb-2">Model Deviation</strong>
-                            <p className="text-sm text-gray-300 leading-relaxed">{insight.realTimeComparison}</p>
-                        </div>
-                        <div className="bg-space-950/30 rounded-lg p-4 border border-white/5">
-                            <strong className="text-green-400 text-xs uppercase tracking-widest block mb-2">Tactical Advice</strong>
-                            <p className="text-sm text-gray-300 leading-relaxed">{insight.advice}</p>
-                        </div>
-                    </div>
-
-                    <div className="flex gap-3 mt-2 overflow-x-auto pb-1">
-                    {insight.sources.map((source, i) => (
-                        <a key={i} href={source.uri} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-[10px] text-gray-500 hover:text-white transition-colors bg-space-950 px-2 py-1 rounded border border-space-800 whitespace-nowrap">
-                        <i className="fas fa-external-link-alt text-[8px]"></i>
-                        {source.title.length > 20 ? source.title.substring(0, 20) + '...' : source.title}
-                        </a>
-                    ))}
-                    </div>
-                </div>
-                ) : (
-                <div className="text-space-rose text-sm border border-space-rose/20 bg-space-rose/5 p-4 rounded-lg">
-                    <i className="fas fa-times-circle mr-2"></i>
-                    AI Analysis Uplink Failed. Retry manually.
-                </div>
-                )}
-            </div>
+            ) : (
+              <div className="text-xs text-slate-600 text-center py-8">
+                Ready for query.
+              </div>
+            )}
           </div>
+        </WeatherCard>
 
-          {/* Accuracy Meter Widget */}
-          <div className="glass-panel p-6 rounded-2xl">
-             <div className="flex justify-between items-center mb-6">
-                <h3 className="text-white text-sm font-bold uppercase tracking-widest flex items-center gap-2">
-                    <i className="fas fa-chart-area text-space-cyan"></i> 
-                    Diurnal Cycle Comparison
-                </h3>
-                {accuracyMetrics && (
-                    <div className="flex items-center gap-3">
-                        <div className="text-right">
-                            <span className="block text-[10px] text-gray-500 uppercase font-bold">Accuracy Score</span>
-                            <span className={`text-xl font-bold font-mono ${accuracyMetrics.score > 85 ? 'text-green-400' : accuracyMetrics.score > 70 ? 'text-yellow-400' : 'text-space-rose'}`}>
-                                {accuracyMetrics.score}%
-                            </span>
-                        </div>
-                    </div>
-                )}
+        {/* Small Stat Cards (1 col each) - Row 3 */}
+        <WeatherCard 
+          title="Data Points" 
+          value={todayData.count} 
+          icon={Activity}
+          className="col-span-1 md:col-span-1 lg:col-span-3"
+          delay={0.3}
+        />
+        <WeatherCard 
+          title="Season Day" 
+          value={todayData.doy} 
+          subtitle="of 365"
+          icon={Calendar}
+          className="col-span-1 md:col-span-1 lg:col-span-3"
+          delay={0.35}
+        />
+        <WeatherCard 
+          title="Model Confidence" 
+          value="94.2%" 
+          trend="up" 
+          trendValue="0.4%"
+          className="col-span-1 md:col-span-1 lg:col-span-3"
+          delay={0.4}
+        />
+        <WeatherCard 
+          title="Precip Probability" 
+          value={`${(todayData.avgPrecip * 10).toFixed(0)}%`}
+          icon={CloudRain}
+          trend={todayData.avgPrecip > 5 ? 'up' : 'neutral'}
+          trendValue="High"
+          className="col-span-1 md:col-span-1 lg:col-span-3"
+          delay={0.45}
+        />
+
+        {/* Charts - Wide Card (12 cols) */}
+        <WeatherCard className="col-span-1 md:col-span-2 lg:col-span-12 min-h-[400px]" delay={0.5}>
+          <div className="flex items-center justify-between mb-6">
+             <div className="flex items-center gap-3">
+               <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400"><Activity size={20}/></div>
+               <h3 className="text-lg font-bold text-white">7-Day Projection</h3>
              </div>
-             
-             {loadingAI ? (
-                <div className="h-40 flex items-center justify-center text-gray-600 font-mono text-xs">
-                   [ WAITING FOR TELEMETRY ]
-                </div>
-             ) : accuracyMetrics ? (
-                <div className="w-full h-48">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={diurnalData}>
-                            <defs>
-                                <linearGradient id="colorActual" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#22d3ee" stopOpacity={0}/>
-                                </linearGradient>
-                                <linearGradient id="colorHist" x1="0" y1="0" x2="0" y2="1">
-                                    <stop offset="5%" stopColor="#64748b" stopOpacity={0.3}/>
-                                    <stop offset="95%" stopColor="#64748b" stopOpacity={0}/>
-                                </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                            <XAxis 
-                                dataKey="time" 
-                                stroke="#475569" 
-                                fontSize={10} 
-                                tickLine={false} 
-                                axisLine={false}
-                                interval={2} 
-                                fontFamily="monospace"
-                            />
-                            <YAxis 
-                                hide 
-                                domain={['auto', 'auto']} 
-                            />
-                            <Tooltip 
-                                contentStyle={{ backgroundColor: '#0B0E17', borderColor: '#334155', fontSize: '12px', color: '#fff', borderRadius: '8px' }}
-                                itemStyle={{ color: '#fff' }}
-                                formatter={(value: number) => [`${value}°C`, '']}
-                            />
-                            <Area 
-                                type="monotone" 
-                                dataKey="Historical" 
-                                name="Historical Model"
-                                stroke="#64748b" 
-                                strokeDasharray="4 4" 
-                                strokeWidth={2}
-                                fillOpacity={1} 
-                                fill="url(#colorHist)" 
-                            />
-                            <Area 
-                                type="monotone" 
-                                dataKey="Actual" 
-                                name="Real-Time Adjusted"
-                                stroke="#22d3ee" 
-                                strokeWidth={3}
-                                fillOpacity={1} 
-                                fill="url(#colorActual)" 
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                    <div className="flex justify-center gap-8 mt-2 text-[10px] uppercase font-bold tracking-widest">
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-1 bg-slate-500/50 rounded-full"></div>
-                            <span className="text-slate-500">Historical Model</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <div className="w-3 h-1 bg-space-cyan rounded-full shadow-[0_0_10px_#22d3ee]"></div>
-                            <span className="text-space-cyan">Live Reality</span>
-                        </div>
-                    </div>
-                </div>
-             ) : (
-                <div className="h-40 flex items-center justify-center text-gray-500 text-sm italic bg-space-950/30 rounded-xl border border-white/5 border-dashed">
-                    Waiting for real-time data input...
-                </div>
-             )}
+             <div className="flex gap-2">
+               <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium">Temp</span>
+               <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium">Precip</span>
+             </div>
           </div>
-        </div>
-      </div>
+          <div className="h-[300px] w-full">
+             <WeatherCharts forecastData={forecast} />
+          </div>
+        </WeatherCard>
 
-      {/* Charts Section */}
-      <div className="mb-8">
-        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-            <span className="w-1 h-8 bg-gradient-to-b from-space-cyan to-transparent rounded-full"></span>
-            7-Day Historical Projection
-        </h2>
-        <WeatherCharts forecastData={forecast} />
-      </div>
-
-      {/* Raw Stats */}
-      <div className="glass-panel rounded-2xl p-6 border-t border-t-white/10">
-        <div className="flex justify-between items-center mb-6">
-            <h3 className="text-lg font-bold text-white tracking-tight">Dataset Metadata</h3>
-            <button 
-                onClick={() => setShowUploader(true)}
-                className="text-xs bg-space-700 hover:bg-space-600 text-white px-4 py-2 rounded-lg border border-space-600 transition-all hover:shadow-lg flex items-center gap-2"
-            >
-                <i className="fas fa-upload"></i> Import New Dataset
-            </button>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-          <div className="p-4 bg-space-950/50 rounded-xl border border-white/5">
-            <span className="block text-gray-500 text-[10px] uppercase tracking-widest mb-1">Source</span>
-            <span className="text-white font-medium">NASA/POWER MERRA-2</span>
-          </div>
-          <div className="p-4 bg-space-950/50 rounded-xl border border-white/5">
-            <span className="block text-gray-500 text-[10px] uppercase tracking-widest mb-1">Coordinates</span>
-            <span className="text-white font-medium font-mono">13.1186, 80.1083</span>
-          </div>
-          <div className="p-4 bg-space-950/50 rounded-xl border border-white/5">
-            <span className="block text-gray-500 text-[10px] uppercase tracking-widest mb-1">Temporal Range</span>
-            <span className="text-white font-medium">2000 - 2023</span>
-          </div>
-          <div className="p-4 bg-space-950/50 rounded-xl border border-white/5">
-            <span className="block text-gray-500 text-[10px] uppercase tracking-widest mb-1">Algorithm</span>
-            <span className="text-space-cyan font-medium">Weighted OLS Regression</span>
-          </div>
-        </div>
-      </div>
+      </main>
     </div>
   );
 };
