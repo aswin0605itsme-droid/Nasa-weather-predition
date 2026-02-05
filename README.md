@@ -1,20 +1,5 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
-
-# Run and deploy your AI Studio app
-
-This contains everything you need to run your app locally.
-
-View your app in AI Studio: https://ai.studio/apps/drive/1FlT8jl3K_QT6l4TUL7xJv55lDNx0BaON
-
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+🛰️ NASA Weather Intelligence Dashboard1st Year B.E. Computer Science Project | Vel Tech Multi Tech CollegeA high-performance weather prediction dashboard built using 24 years of NASA POWER meteorological data and the Google Gemini API. This project leverages modern frontend architecture and statistical preprocessing to provide hyper-accurate temperature forecasts.🚀 The Core Problem & SolutionMost basic weather models suffer from "Mean Reversion," where the model predicts the average temperature (e.g., $9^\circ\text{C}$) rather than seasonal peaks ($22\text{-}30^\circ\text{C}$).How I fixed it:Cyclical Time Encoding: Converted dates into Sine/Cosine waves so the AI understands that December and January are seasonally linked.Sliding Window Logic: The model processes a 7-day "lookback" period to predict the 8th day, capturing short-term trends.MinMax Scaling: Implemented mathematical normalization to keep data within a $0\text{-}1$ range, preventing weight collapse.✨ FeaturesBento Grid UI: A modular, modern layout for data density and clarity.Glassmorphism Design: Immersive blur effects and deep blue gradients for a premium "Sci-Fi" aesthetic.Real-time AI Analysis: Uses the Google Gemini Pro model to interpret 24 years of NASA historical patterns.Framer Motion: Smooth, staggered animations for all data cards.🛠️ Tech StackFramework: Vite + ReactStyling: Tailwind CSSAI Engine: Google Gemini APIDataset: NASA POWER (1/2 arc-degree resolution)Deployment: Vercel📦 Local SetupClone the RepoBashgit clone https://github.com/your-username/Nasa-weather-prediction.git
+cd Nasa-weather-prediction
+Install DependenciesBashnpm install
+Configure Environment VariablesCreate a .env.local file in the root directory:Code snippetVITE_GEMINI_API_KEY=your_api_key_here
+Run Development ServerBashnpm run dev
