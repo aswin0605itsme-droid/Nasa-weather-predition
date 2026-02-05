@@ -1,0 +1,7 @@
+{
+  "name": "NASA Weather Predictor",
+  "description": "A data-science powered weather dashboard that predicts future weather using historical NASA MERRA-2 data and validates it with real-time Gemini AI insights.",
+  "requestFramePermissions": [
+    "geolocation"
+  ]
+}
