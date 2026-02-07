@@ -14,7 +14,9 @@ import {
   Calendar,
   MessageSquare,
   Search,
-  Sun
+  Sun,
+  LayoutDashboard,
+  Globe
 } from 'lucide-react';
 import { Climatology, AIInsight, User } from '../types';
 import { getForecast, getDayOfYear, doyToDate, formatDate } from '../utils';
@@ -51,9 +53,8 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   const [activeLocationName, setActiveLocationName] = useState('Sector 7G');
   const [showUploader, setShowUploader] = useState(false);
   
-  // Map Search State
-  const [mapSearchQuery, setMapSearchQuery] = useState('');
-  const [isSearchingMap, setIsSearchingMap] = useState(false);
+  // Mobile Tab State
+  const [mobileTab, setMobileTab] = useState<'overview' | 'map'>('overview');
 
   useEffect(() => {
     const todayDOY = getDayOfYear(new Date());
@@ -101,35 +102,14 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
       });
   };
 
-  const handleMapSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!mapSearchQuery.trim()) return;
-    
-    setIsSearchingMap(true);
-    try {
-        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(mapSearchQuery)}`);
-        const data = await response.json();
-        
-        if (data && data.length > 0) {
-            const { lat, lon } = data[0];
-            onLocationChange(parseFloat(lat), parseFloat(lon));
-            setMapSearchQuery('');
-        } else {
-            alert("Location not found. Try a broader search.");
-        }
-    } catch (error) {
-        console.error("Map search failed:", error);
-    } finally {
-        setIsSearchingMap(false);
-    }
-  };
-
   const handleUploadComplete = (csvData: string) => {
     setShowUploader(false);
     onFileUpload(csvData);
   };
 
   // Helper for Bento Grid responsiveness
+  // md:grid-cols-2 lg:grid-cols-12 means it works normally on desktop
+  // We handle mobile visiblity via conditional rendering classes below
   const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 max-w-[1600px] mx-auto p-4 md:p-8";
 
   if (!todayData) return (
@@ -168,7 +148,7 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           <p className="text-slate-500 text-sm">Welcome back, <span className="text-cyan-400">{user.name}</span></p>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <a 
             href="https://docs.google.com/forms/d/e/1FAIpQLSdQ1QRenj1VuuH3raPdpDQLEybL3MEr4_nrjA4movsGNtpvIg/viewform?usp=sharing&ouid=102995987645792571597"
             target="_blank"
@@ -181,23 +161,41 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
             onClick={() => setShowUploader(true)}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 hover:bg-white/10 ring-1 ring-white/10 text-xs font-medium transition-all"
           >
-            <Upload size={14} /> Import Data
+            <Upload size={14} /> Import
           </button>
           <button 
             onClick={onLogout}
             className="flex items-center gap-2 px-4 py-2 rounded-full bg-rose-500/10 hover:bg-rose-500/20 ring-1 ring-rose-500/20 text-rose-400 text-xs font-medium transition-all"
           >
-            <LogOut size={14} /> Abort
+            <LogOut size={14} />
           </button>
         </div>
       </header>
 
+      {/* Mobile Tab Navigation */}
+      <div className="md:hidden px-4 mb-4">
+        <div className="flex p-1 bg-slate-900/50 rounded-xl border border-white/10">
+          <button 
+            onClick={() => setMobileTab('overview')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mobileTab === 'overview' ? 'bg-indigo-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <LayoutDashboard size={16} /> Mission Data
+          </button>
+          <button 
+            onClick={() => setMobileTab('map')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${mobileTab === 'map' ? 'bg-cyan-600 text-white shadow-lg' : 'text-slate-400 hover:text-white'}`}
+          >
+            <Globe size={16} /> Global Sat-Map
+          </button>
+        </div>
+      </div>
+
       {/* Bento Grid Layout */}
       <main className={gridClasses}>
         
-        {/* Main Temperature - Large Card (4 cols, 2 rows) */}
+        {/* Main Temperature - Large Card */}
         <WeatherCard 
-          className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[300px] flex flex-col justify-between"
+          className={`col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[300px] flex flex-col justify-between ${mobileTab === 'map' ? 'hidden md:flex' : 'flex'}`}
           delay={0.1}
         >
           <div className="flex justify-between items-start">
@@ -237,50 +235,19 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
         </WeatherCard>
 
         {/* Map - Medium Card (4 cols, 2 rows) */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[400px] relative group rounded-3xl overflow-hidden ring-1 ring-white/10 bg-slate-900">
+        {/* On mobile: Hidden if tab is not map. Height adjusted for fullscreen feel on mobile */}
+        <div className={`col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[400px] relative group rounded-3xl overflow-hidden ring-1 ring-white/10 bg-slate-900 ${mobileTab === 'overview' ? 'hidden md:block' : 'block h-[70vh] md:h-auto'}`}>
           <LocationMap 
             lat={location.lat} 
             lon={location.lon} 
             onLocationSelect={onLocationChange} 
           />
           <div className="absolute inset-0 pointer-events-none ring-1 ring-white/10 rounded-3xl z-20"></div>
-          
-          {/* Map Search Bar */}
-          <div className="absolute top-4 right-4 z-[400] w-full max-w-[200px] sm:max-w-xs px-4 sm:px-0">
-            <form onSubmit={handleMapSearch} className="relative group/search">
-                <input
-                    type="text"
-                    value={mapSearchQuery}
-                    onChange={(e) => setMapSearchQuery(e.target.value)}
-                    placeholder="Locate sector..."
-                    className="w-full bg-slate-950/80 backdrop-blur-md border border-white/20 rounded-full py-2 pl-4 pr-10 text-xs text-white focus:outline-none focus:border-cyan-400 transition-all shadow-lg placeholder-slate-500"
-                />
-                <button 
-                    type="submit" 
-                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/10 rounded-full text-slate-400 hover:text-white hover:bg-cyan-500/20 transition-all"
-                    disabled={isSearchingMap}
-                >
-                    {isSearchingMap ? <Activity size={12} className="animate-spin" /> : <Search size={12} />}
-                </button>
-            </form>
-          </div>
-
-          {/* HUD Overlay */}
-          <div className="absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
-              <span className="text-[10px] font-mono text-slate-300">LIVE TRACKING</span>
-            </div>
-          </div>
-          <div className="absolute bottom-4 right-4 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10 text-right">
-             <div className="text-[10px] text-slate-500 uppercase tracking-widest">Coordinates</div>
-             <div className="text-xs font-mono text-cyan-400">{location.lat.toFixed(4)}, {location.lon.toFixed(4)}</div>
-          </div>
         </div>
 
-        {/* Gemini Insight - Wide Card (4 cols, 2 rows - vertical on mobile, stacked) */}
+        {/* Gemini Insight - Wide Card */}
         <WeatherCard 
-          className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 bg-gradient-to-br from-indigo-950/30 to-purple-950/30"
+          className={`col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 bg-gradient-to-br from-indigo-950/30 to-purple-950/30 ${mobileTab === 'map' ? 'hidden md:block' : 'block'}`}
           delay={0.2}
         >
           <div className="flex items-center gap-3 mb-6">
@@ -340,53 +307,46 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           </div>
         </WeatherCard>
 
-        {/* Small Stat Cards (1 col each) - Row 3 */}
-        <WeatherCard 
-          title="Data Points" 
-          value={todayData.count} 
-          icon={Activity}
-          className="col-span-1 md:col-span-1 lg:col-span-2"
-          delay={0.3}
-        />
-        <WeatherCard 
-          title="Season Day" 
-          value={todayData.doy} 
-          subtitle="of 365"
-          icon={Calendar}
-          className="col-span-1 md:col-span-1 lg:col-span-2"
-          delay={0.35}
-        />
-        {/* New UV Index Card */}
-        <WeatherCard 
-          title="UV Index" 
-          value="5" 
-          subtitle="Moderate"
-          icon={Sun}
-          trend="neutral"
-          trendValue="Avg"
-          className="col-span-1 md:col-span-1 lg:col-span-2"
-          delay={0.38}
-        />
-        <WeatherCard 
-          title="Model Confidence" 
-          value="94.2%" 
-          trend="up" 
-          trendValue="0.4%"
-          className="col-span-1 md:col-span-1 lg:col-span-3"
-          delay={0.4}
-        />
-        <WeatherCard 
-          title="Precip Probability" 
-          value={`${(todayData.avgPrecip * 10).toFixed(0)}%`}
-          icon={CloudRain}
-          trend={todayData.avgPrecip > 5 ? 'up' : 'neutral'}
-          trendValue="High"
-          className="col-span-1 md:col-span-1 lg:col-span-3"
-          delay={0.45}
-        />
+        {/* Small Stat Cards Group - Hidden on mobile map tab */}
+        <div className={`col-span-1 md:col-span-2 lg:col-span-12 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 ${mobileTab === 'map' ? 'hidden md:grid' : 'grid'}`}>
+            <WeatherCard 
+              title="Data Points" 
+              value={todayData.count} 
+              icon={Activity}
+              className="col-span-1"
+              delay={0.3}
+            />
+            <WeatherCard 
+              title="Season Day" 
+              value={todayData.doy} 
+              subtitle="of 365"
+              icon={Calendar}
+              className="col-span-1"
+              delay={0.35}
+            />
+            <WeatherCard 
+              title="UV Index" 
+              value="5" 
+              subtitle="Moderate"
+              icon={Sun}
+              trend="neutral"
+              trendValue="Avg"
+              className="col-span-1"
+              delay={0.38}
+            />
+            <WeatherCard 
+              title="Precip Probability" 
+              value={`${(todayData.avgPrecip * 10).toFixed(0)}%`}
+              icon={CloudRain}
+              trend={todayData.avgPrecip > 5 ? 'up' : 'neutral'}
+              trendValue="High"
+              className="col-span-1"
+              delay={0.45}
+            />
+        </div>
 
-        {/* Charts - Wide Card (12 cols) */}
-        <WeatherCard className="col-span-1 md:col-span-2 lg:col-span-12 min-h-[400px]" delay={0.5}>
+        {/* Charts - Wide Card */}
+        <WeatherCard className={`col-span-1 md:col-span-2 lg:col-span-12 min-h-[400px] ${mobileTab === 'map' ? 'hidden md:block' : 'block'}`} delay={0.5}>
           <div className="flex items-center justify-between mb-6">
              <div className="flex items-center gap-3">
                <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400"><Activity size={20}/></div>
