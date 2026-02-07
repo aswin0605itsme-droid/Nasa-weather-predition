@@ -174,7 +174,7 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-sm font-mono text-cyan-400 uppercase tracking-widest mb-1">Projected Temp</h2>
-              <div className="text-xs text-slate-500">Historical Regression Model</div>
+              <div className="text-xs text-slate-400">Historical Regression Model</div>
             </div>
             <Thermometer className="text-rose-500" size={24} />
           </div>
