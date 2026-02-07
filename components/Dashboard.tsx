@@ -12,7 +12,8 @@ import {
   Upload, 
   Activity,
   Calendar,
-  MessageSquare
+  MessageSquare,
+  Search
 } from 'lucide-react';
 import { Climatology, AIInsight, User } from '../types';
 import { getForecast, getDayOfYear, doyToDate, formatDate } from '../utils';
@@ -48,6 +49,10 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   const [searchQuery, setSearchQuery] = useState('');
   const [activeLocationName, setActiveLocationName] = useState('Sector 7G');
   const [showUploader, setShowUploader] = useState(false);
+  
+  // Map Search State
+  const [mapSearchQuery, setMapSearchQuery] = useState('');
+  const [isSearchingMap, setIsSearchingMap] = useState(false);
 
   useEffect(() => {
     const todayDOY = getDayOfYear(new Date());
@@ -93,6 +98,29 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
         setInsight(res);
         setLoadingAI(false);
       });
+  };
+
+  const handleMapSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mapSearchQuery.trim()) return;
+    
+    setIsSearchingMap(true);
+    try {
+        const response = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(mapSearchQuery)}`);
+        const data = await response.json();
+        
+        if (data && data.length > 0) {
+            const { lat, lon } = data[0];
+            onLocationChange(parseFloat(lat), parseFloat(lon));
+            setMapSearchQuery('');
+        } else {
+            alert("Location not found. Try a broader search.");
+        }
+    } catch (error) {
+        console.error("Map search failed:", error);
+    } finally {
+        setIsSearchingMap(false);
+    }
   };
 
   const handleUploadComplete = (csvData: string) => {
@@ -208,13 +236,34 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
         </WeatherCard>
 
         {/* Map - Medium Card (4 cols, 2 rows) */}
-        <div className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 relative group rounded-3xl overflow-hidden ring-1 ring-white/10 bg-slate-900">
+        <div className="col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[400px] relative group rounded-3xl overflow-hidden ring-1 ring-white/10 bg-slate-900">
           <LocationMap 
             lat={location.lat} 
             lon={location.lon} 
             onLocationSelect={onLocationChange} 
           />
           <div className="absolute inset-0 pointer-events-none ring-1 ring-white/10 rounded-3xl z-20"></div>
+          
+          {/* Map Search Bar */}
+          <div className="absolute top-4 right-4 z-[400] w-full max-w-[200px] sm:max-w-xs px-4 sm:px-0">
+            <form onSubmit={handleMapSearch} className="relative group/search">
+                <input
+                    type="text"
+                    value={mapSearchQuery}
+                    onChange={(e) => setMapSearchQuery(e.target.value)}
+                    placeholder="Locate sector..."
+                    className="w-full bg-slate-950/80 backdrop-blur-md border border-white/20 rounded-full py-2 pl-4 pr-10 text-xs text-white focus:outline-none focus:border-cyan-400 transition-all shadow-lg placeholder-slate-500"
+                />
+                <button 
+                    type="submit" 
+                    className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/10 rounded-full text-slate-400 hover:text-white hover:bg-cyan-500/20 transition-all"
+                    disabled={isSearchingMap}
+                >
+                    {isSearchingMap ? <Activity size={12} className="animate-spin" /> : <Search size={12} />}
+                </button>
+            </form>
+          </div>
+
           {/* HUD Overlay */}
           <div className="absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
             <div className="flex items-center gap-2">
