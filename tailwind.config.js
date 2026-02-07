@@ -2,10 +2,13 @@
 export default {
   content: [
     "./index.html",
-    "./*.{js,ts,jsx,tsx}",
+    // Explicitly list root files to avoid scanning node_modules
+    "./App.tsx",
+    "./index.tsx",
+    // Strictly target source folders
     "./components/**/*.{js,ts,jsx,tsx}",
     "./services/**/*.{js,ts,jsx,tsx}",
-    "./data/**/*.{js,ts,jsx,tsx}",
+    // EXCLUDED: ./data folder (contains massive string files that slow down the build)
   ],
   theme: {
     extend: {

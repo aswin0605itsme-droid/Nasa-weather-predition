@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import AuthScreen from './components/AuthScreen';
 import { parseNASAData, calculateClimatology, adjustDataForLocation } from './utils';
 import { AppState, Climatology, User } from './types';
-import { NASA_CSV_DATA } from './data/weatherData';
 
 // Lazy load the Dashboard to split the bundle (optimizes loading of Recharts/Leaflet)
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -19,8 +18,8 @@ function App() {
   const [loadingText, setLoadingText] = useState("Initializing Systems...");
   const [error, setError] = useState<string | null>(null);
 
-  // Data persistence
-  const rawDataRef = useRef<string>(NASA_CSV_DATA);
+  // Data persistence - initialized empty to prevent large bundle size
+  const rawDataRef = useRef<string>("");
 
   const BASE_LAT = 13.1186;
 
@@ -43,8 +42,20 @@ function App() {
         setLoadingProgress(0);
     }
 
+    // Step 0: Dynamic Data Ingestion (Performance Optimization)
+    // We strictly load the massive dataset ONLY when needed, not in the main bundle.
     if (overrideData) {
       rawDataRef.current = overrideData;
+    } else if (isInitial && !rawDataRef.current) {
+       try {
+         setLoadingText("Accessing NASA Archival Database...");
+         setLoadingProgress(5);
+         // Dynamic import to split code
+         const dataModule = await import('./data/weatherData');
+         rawDataRef.current = dataModule.NASA_CSV_DATA;
+       } catch (err) {
+         throw new Error("Database Connection Failed: Could not load historical records.");
+       }
     }
 
     // Step 1: Parse/Ingest
