@@ -2,7 +2,10 @@
 export default {
   content: [
     "./index.html",
-    "./**/*.{js,ts,jsx,tsx}",
+    "./*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+    "./services/**/*.{js,ts,jsx,tsx}",
+    "./data/**/*.{js,ts,jsx,tsx}",
   ],
   theme: {
     extend: {
@@ -27,6 +30,9 @@ export default {
       boxShadow: {
         'glow': '0 0 20px rgba(99, 102, 241, 0.15)',
         'glow-cyan': '0 0 20px rgba(34, 211, 238, 0.15)',
+      },
+      animation: {
+        'spin-slow': 'spin 3s linear infinite',
       }
     },
   },

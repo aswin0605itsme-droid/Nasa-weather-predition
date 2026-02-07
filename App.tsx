@@ -1,10 +1,12 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense, lazy } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AuthScreen from './components/AuthScreen';
-import Dashboard from './components/Dashboard';
 import { parseNASAData, calculateClimatology, adjustDataForLocation } from './utils';
 import { AppState, Climatology, User } from './types';
 import { NASA_CSV_DATA } from './data/weatherData';
+
+// Lazy load the Dashboard to split the bundle (optimizes loading of Recharts/Leaflet)
+const Dashboard = lazy(() => import('./components/Dashboard'));
 
 function App() {
   const [appState, setAppState] = useState<AppState>(AppState.LOADING);
@@ -215,15 +217,38 @@ function App() {
       return <AuthScreen onLogin={handleLogin} />;
     }
 
+    // Glassmorphism Fallback UI for Suspense
     return (
-      <Dashboard 
-        climatology={climatology} 
-        location={location}
-        onLocationChange={handleLocationChange}
-        onLogout={handleLogout}
-        user={user}
-        onFileUpload={handleFileUpload}
-      />
+      <Suspense fallback={
+        <div className="flex h-[80vh] items-center justify-center w-full">
+          <div className="relative flex flex-col items-center">
+            {/* Spinning Rings */}
+            <div className="w-24 h-24 rounded-full border-2 border-white/5 border-t-cyan-400 animate-spin"></div>
+            <div className="absolute top-0 left-0 w-24 h-24 rounded-full border-2 border-transparent border-b-indigo-500 animate-spin-slow opacity-60"></div>
+            
+            {/* Pulsing Core */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-16 h-16 bg-gradient-to-br from-indigo-500/20 to-cyan-500/20 rounded-full blur-md animate-pulse"></div>
+            
+            <div className="mt-8 flex flex-col items-center">
+                <span className="text-xs font-mono text-cyan-400 tracking-[0.3em] animate-pulse">
+                    LOADING MODULES
+                </span>
+                <span className="text-[10px] text-slate-500 mt-2 font-mono">
+                    Initializing Visualization Engine...
+                </span>
+            </div>
+          </div>
+        </div>
+      }>
+        <Dashboard 
+          climatology={climatology} 
+          location={location}
+          onLocationChange={handleLocationChange}
+          onLogout={handleLogout}
+          user={user}
+          onFileUpload={handleFileUpload}
+        />
+      </Suspense>
     );
   };
 

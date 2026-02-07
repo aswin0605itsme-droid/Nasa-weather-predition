@@ -43,7 +43,7 @@ Most basic weather models suffer from **"Mean Reversion,"** where the model pred
 
 1.  **Clone the Repo**
     ```bash
-    git clone [https://github.com/aswin0605itsme-droid/Nasa-weather-predition.git](https://github.com/aswin0605itsme-droid/Nasa-weather-predition.git)
+    git clone https://github.com/aswin0605itsme-droid/Nasa-weather-predition.git
     cd Nasa-weather-predition
     ```
 
@@ -53,9 +53,9 @@ Most basic weather models suffer from **"Mean Reversion,"** where the model pred
     ```
 
 3.  **Configure Environment Variables**
-    Create a `.env.local` file:
+    Create a `.env` file:
     ```env
-    VITE_GEMINI_API_KEY=your_api_key_here
+    VITE_API_KEY=your_gemini_api_key_here
     ```
 
 4.  **Run Development Server**
