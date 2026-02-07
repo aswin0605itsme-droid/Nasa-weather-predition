@@ -13,7 +13,8 @@ import {
   Activity,
   Calendar,
   MessageSquare,
-  Search
+  Search,
+  Sun
 } from 'lucide-react';
 import { Climatology, AIInsight, User } from '../types';
 import { getForecast, getDayOfYear, doyToDate, formatDate } from '../utils';
@@ -344,7 +345,7 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           title="Data Points" 
           value={todayData.count} 
           icon={Activity}
-          className="col-span-1 md:col-span-1 lg:col-span-3"
+          className="col-span-1 md:col-span-1 lg:col-span-2"
           delay={0.3}
         />
         <WeatherCard 
@@ -352,8 +353,19 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           value={todayData.doy} 
           subtitle="of 365"
           icon={Calendar}
-          className="col-span-1 md:col-span-1 lg:col-span-3"
+          className="col-span-1 md:col-span-1 lg:col-span-2"
           delay={0.35}
+        />
+        {/* New UV Index Card */}
+        <WeatherCard 
+          title="UV Index" 
+          value="5" 
+          subtitle="Moderate"
+          icon={Sun}
+          trend="neutral"
+          trendValue="Avg"
+          className="col-span-1 md:col-span-1 lg:col-span-2"
+          delay={0.38}
         />
         <WeatherCard 
           title="Model Confidence" 
