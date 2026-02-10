@@ -7,7 +7,8 @@ export const fetchWeatherInsights = async (
   historicalTemp: number,
   historicalPrecip: number,
   dateStr: string,
-  searchLocation?: string
+  searchLocation?: string,
+  projection?: { days: number; avgTemp: number; avgPrecip: number }
 ): Promise<AIInsight> => {
   try {
     const apiKey = process.env.API_KEY;
@@ -28,6 +29,11 @@ export const fetchWeatherInsights = async (
 
     let prompt = "";
     
+    // Construct projection text if available
+    const projectionText = projection 
+        ? `Additionally, my historical model predicts a ${projection.days}-day trend with an average temperature of ${projection.avgTemp.toFixed(1)}°C and average precipitation of ${projection.avgPrecip.toFixed(1)}mm.` 
+        : "";
+
     if (searchLocation) {
         prompt = `
           I am a user searching for weather in "${searchLocation}".
@@ -35,13 +41,14 @@ export const fetchWeatherInsights = async (
           
           Please use Google Search to find the ACTUAL current weather forecast for ${searchLocation} for today.
           
-          Note: I am comparing this with a historical model (Lat ${lat}, Lon ${lon}) which predicts ${historicalTemp}°C. 
+          Note: I am comparing this with a historical model (Lat ${lat}, Lon ${lon}) which predicts ${historicalTemp}°C for today.
+          ${projectionText}
           
           Format the response strictly as JSON with this structure:
           {
             "summary": "Short summary of forecast for ${searchLocation}.",
-            "comparison": "Brief comparison with the station baseline provided.",
-            "advice": "Actionable advice for ${searchLocation}.",
+            "comparison": "Compare real-time weather with historical baseline AND the ${projection?.days || 7}-day outlook mentioned.",
+            "advice": "Actionable advice for ${searchLocation} considering the trend.",
             "current_temp_c": 25.5, 
             "condition": "Sunny/Cloudy/etc"
           }
@@ -52,17 +59,19 @@ export const fetchWeatherInsights = async (
           I am analyzing weather for a location at Latitude ${lat}, Longitude ${lon}.
           Today is ${dateStr}.
           
-          My historical data analysis (averaging past 20 years) predicts:
+          My historical data analysis (averaging past 20 years) predicts for today:
           - Temperature Range: ${historicalTemp}°C
           - Precipitation: ${historicalPrecip} mm
+          
+          ${projectionText}
           
           Please use Google Search to find the ACTUAL current weather forecast for this location for today.
           
           Format the response strictly as JSON with this structure:
           {
             "summary": "Short summary of current actual weather.",
-            "comparison": "Direct comparison: Real-time vs Historical Prediction.",
-            "advice": "Actionable advice based on the real-time weather.",
+            "comparison": "Direct comparison: Real-time vs Historical Prediction vs Forecast Trend.",
+            "advice": "Actionable advice based on the real-time weather and forecast.",
             "current_temp_c": 25.5,
             "condition": "Sunny/Cloudy/etc"
           }

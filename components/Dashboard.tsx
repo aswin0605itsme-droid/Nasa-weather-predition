@@ -53,26 +53,34 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   const [activeLocationName, setActiveLocationName] = useState('Sector 7G');
   const [showUploader, setShowUploader] = useState(false);
   
-  // New State: Projection Days
-  const [projectionDays, setProjectionDays] = useState<7 | 14 | 32>(7);
+  // Projection Days Selection (7, 14, 28)
+  const [projectionDays, setProjectionDays] = useState<7 | 14 | 28>(7);
   
   // Mobile Tab State
   const [mobileTab, setMobileTab] = useState<'overview' | 'map'>('overview');
 
+  // 1. Calculate Forecast when projectionDays or data changes
   useEffect(() => {
     const todayDOY = getDayOfYear(new Date());
     const todayClim = climatology.get(todayDOY);
-    // Use projectionDays state here
     const nextDays = getForecast(climatology, todayDOY, projectionDays);
 
     if (todayClim) {
       setTodayData(todayClim);
       setForecast(nextDays);
     }
-  }, [climatology, projectionDays]); // Re-run when days change
+  }, [climatology, projectionDays]);
 
+  // 2. Trigger AI Insight only when forecast matches the selected projection days
   useEffect(() => {
-    if (!todayData) return;
+    if (!todayData || forecast.length === 0) return;
+    
+    // Race Condition Guard: Ensure forecast data length matches the requested projection
+    if (forecast.length !== projectionDays) return;
+
+    // Calculate forecast averages for AI context
+    const avgForecastTemp = forecast.reduce((acc, day) => acc + day.avgTemp, 0) / forecast.length;
+    const avgForecastPrecip = forecast.reduce((acc, day) => acc + day.avgPrecip, 0) / forecast.length;
 
     setLoadingAI(true);
     fetchWeatherInsights(
@@ -81,12 +89,17 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
       todayData.avgTemp,
       todayData.avgPrecip,
       new Date().toDateString(),
-      searchQuery ? searchQuery : undefined
+      searchQuery ? searchQuery : undefined,
+      { 
+        days: projectionDays, 
+        avgTemp: avgForecastTemp, 
+        avgPrecip: avgForecastPrecip 
+      }
     ).then(res => {
       setInsight(res);
       setLoadingAI(false);
     });
-  }, [location, todayData]);
+  }, [location, todayData, projectionDays, forecast]); 
 
   // Calculate dynamic UV Index based on precipitation (cloud cover proxy)
   const { uvIndex, uvCategory } = useMemo(() => {
@@ -110,13 +123,22 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     if (!todayData || !searchQuery.trim()) return;
     setLoadingAI(true);
     setActiveLocationName(searchQuery);
+    
+    const avgForecastTemp = forecast.reduce((acc, day) => acc + day.avgTemp, 0) / (forecast.length || 1);
+    const avgForecastPrecip = forecast.reduce((acc, day) => acc + day.avgPrecip, 0) / (forecast.length || 1);
+
     fetchWeatherInsights(
         location.lat,
         location.lon,
         todayData.avgTemp,
         todayData.avgPrecip,
         new Date().toDateString(),
-        searchQuery
+        searchQuery,
+        { 
+            days: projectionDays, 
+            avgTemp: avgForecastTemp, 
+            avgPrecip: avgForecastPrecip 
+        }
       ).then(res => {
         setInsight(res);
         setLoadingAI(false);
@@ -254,7 +276,6 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
         </WeatherCard>
 
         {/* Map - Medium Card (4 cols, 2 rows) */}
-        {/* On mobile: Hidden if tab is not map. Height adjusted for fullscreen feel on mobile */}
         <div className={`col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 min-h-[400px] relative group rounded-3xl overflow-hidden ring-1 ring-white/10 bg-slate-900 ${mobileTab === 'overview' ? 'hidden md:block' : 'block h-[70vh] md:h-auto'}`}>
           <LocationMap 
             lat={location.lat} 
@@ -372,27 +393,34 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
                <h3 className="text-lg font-bold text-white">Projection</h3>
              </div>
              
-             {/* Projection Toggle & Legend */}
+             {/* Projection Toggle */}
              <div className="flex items-center gap-4">
-                <div className="flex bg-slate-900/50 rounded-lg p-1 border border-white/10">
-                  {[7, 14, 32].map(days => (
+                <div className="flex bg-slate-900/50 rounded-lg p-1 border border-white/10 backdrop-blur-sm">
+                  {[7, 14, 28].map(days => (
                     <button
                       key={days}
                       onClick={() => setProjectionDays(days as any)}
-                      className={`px-3 py-1 text-xs font-mono rounded-md transition-all ${
+                      className={`relative px-4 py-1.5 text-xs font-mono rounded-md transition-all duration-300 ${
                         projectionDays === days 
-                          ? 'bg-cyan-500/20 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' 
+                          ? 'text-cyan-400 font-bold shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
                           : 'text-slate-500 hover:text-slate-300'
                       }`}
                     >
-                      {days}D
+                      {projectionDays === days && (
+                        <motion.div 
+                          layoutId="activeTab"
+                          className="absolute inset-0 bg-cyan-500/10 rounded-md border border-cyan-500/20"
+                          transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                        />
+                      )}
+                      <span className="relative z-10">{days}D</span>
                     </button>
                   ))}
                 </div>
                 
                 <div className="hidden sm:flex gap-2">
-                  <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium">Temp</span>
-                  <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium">Precip</span>
+                  <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium border border-rose-500/20">Temp</span>
+                  <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium border border-cyan-500/20">Precip</span>
                 </div>
              </div>
           </div>

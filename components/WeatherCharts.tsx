@@ -52,8 +52,18 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
 
   // Dynamic sizing based on data length
   const dataLength = forecastData.length;
-  const barSize = dataLength > 20 ? 6 : dataLength > 10 ? 12 : 24;
-  const axisInterval = dataLength > 20 ? 3 : 0; // Skip labels for 32 days
+  
+  // Bar Size Logic:
+  // > 20 days (28D mode): Thin bars (8px)
+  // > 10 days (14D mode): Medium bars (12px)
+  // <= 10 days (7D mode): Thick bars (24px)
+  const barSize = dataLength > 20 ? 8 : dataLength > 10 ? 12 : 24;
+
+  // Axis Interval Logic:
+  // > 20 days (28D mode): Skip 3 (Show every 4th label -> ~7 labels)
+  // > 10 days (14D mode): Skip 1 (Show every 2nd label -> ~7 labels)
+  // <= 10 days (7D mode): Show all
+  const axisInterval = dataLength > 20 ? 3 : dataLength > 10 ? 1 : 0; 
 
   if (combinedView) {
     return (
