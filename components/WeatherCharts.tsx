@@ -20,7 +20,7 @@ interface WeatherChartsProps {
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
-      <div className="glass-panel p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)]">
+      <div className="glass-panel p-4 rounded-xl border border-white/10 shadow-[0_0_20px_rgba(0,0,0,0.5)] bg-slate-900/90">
         <p className="text-gray-300 text-xs font-mono mb-2 border-b border-white/10 pb-1">{label}</p>
         {payload.map((entry: any, index: number) => (
           <div key={index} className="flex items-center gap-2 text-sm mb-1">
@@ -50,10 +50,14 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
     precip: d.avgPrecip
   }));
 
+  // Dynamic sizing based on data length
+  const dataLength = forecastData.length;
+  const barSize = dataLength > 20 ? 6 : dataLength > 10 ? 12 : 24;
+  const axisInterval = dataLength > 20 ? 3 : 0; // Skip labels for 32 days
+
   if (combinedView) {
     return (
       <div className="glass-panel p-6 rounded-2xl relative overflow-hidden group">
-        {/* Glow effect */}
         <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-indigo-500 to-transparent opacity-50"></div>
         
         <div className="flex justify-between items-center mb-8 relative z-10">
@@ -61,7 +65,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
             <div className="p-2 bg-indigo-500/10 rounded-lg border border-indigo-500/20">
               <i className="fas fa-chart-line text-indigo-400"></i>
             </div>
-            Integrated Weather Model
+            Integrated Model
           </h3>
           <button 
             onClick={() => setCombinedView(false)}
@@ -71,7 +75,6 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
           </button>
         </div>
         
-        {/* Explicit Height Container to fix Recharts Warning */}
         <div style={{ width: '100%', height: '400px' }}>
           <ResponsiveContainer width="100%" height="100%">
             <ComposedChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 0 }}>
@@ -93,6 +96,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                 tickLine={false}
                 axisLine={false}
                 dy={10}
+                interval={axisInterval}
               />
               <YAxis 
                 yAxisId="left"
@@ -130,8 +134,8 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                 dataKey="precip" 
                 name="Precipitation" 
                 fill="url(#colorPrecipCombined)" 
-                barSize={16}
-                radius={[4, 4, 0, 0]}
+                barSize={barSize}
+                radius={[2, 2, 0, 0]}
               />
             </ComposedChart>
           </ResponsiveContainer>
@@ -175,6 +179,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                   tickLine={false}
                   axisLine={false}
                   dy={10}
+                  interval={axisInterval}
                 />
                 <YAxis 
                   stroke="#94a3b8" 
@@ -190,7 +195,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                   name="Avg Temp" 
                   unit="°C"
                   stroke="#f43f5e" 
-                  strokeWidth={3}
+                  strokeWidth={2}
                   fillOpacity={1} 
                   fill="url(#colorTemp)" 
                 />
@@ -222,6 +227,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                   tickLine={false}
                   axisLine={false}
                   dy={10}
+                  interval={axisInterval}
                 />
                 <YAxis 
                   stroke="#94a3b8" 
@@ -236,8 +242,8 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                   name="Precipitation" 
                   unit="mm"
                   fill="url(#colorPrecip)" 
-                  barSize={30}
-                  radius={[6, 6, 0, 0]}
+                  barSize={barSize}
+                  radius={[4, 4, 0, 0]}
                 />
               </ComposedChart>
             </ResponsiveContainer>

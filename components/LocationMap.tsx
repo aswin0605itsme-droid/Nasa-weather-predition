@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import L from 'leaflet';
-import { Search, Activity, Crosshair, MapPin, Navigation } from 'lucide-react';
+import { Search, Activity, MapPin, Navigation } from 'lucide-react';
 
 interface LocationMapProps {
   lat: number;
@@ -9,7 +9,7 @@ interface LocationMapProps {
 }
 
 const LocationMap: React.FC<LocationMapProps> = ({ lat, lon, onLocationSelect }) => {
-  const mapRef = useRef<HTMLDivElement>(null);
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<L.Map | null>(null);
   const markerRef = useRef<L.Marker | null>(null);
   
@@ -40,69 +40,85 @@ const LocationMap: React.FC<LocationMapProps> = ({ lat, lon, onLocationSelect })
     }
   };
 
+  // Initialize Map
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapContainerRef.current) return;
+    if (mapInstanceRef.current) return; // Prevent double initialization
 
-    // Initialize map if it doesn't exist
-    if (!mapInstanceRef.current) {
-      mapInstanceRef.current = L.map(mapRef.current, {
-        center: [lat, lon],
-        zoom: 10,
-        zoomControl: false,
-        attributionControl: false
-      });
+    const map = L.map(mapContainerRef.current, {
+      center: [lat, lon],
+      zoom: 10,
+      zoomControl: false,
+      attributionControl: false
+    });
 
-      // Dark Matter tiles for space theme
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        maxZoom: 19,
-        subdomains: 'abcd',
-      }).addTo(mapInstanceRef.current);
+    mapInstanceRef.current = map;
 
-      // Custom icon
-      const icon = L.divIcon({
-        className: 'custom-div-icon',
-        html: `<div style="background-color: #22d3ee; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 15px #22d3ee;"></div>`,
-        iconSize: [12, 12],
-        iconAnchor: [6, 6]
-      });
+    // Dark Matter tiles for space theme
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      maxZoom: 19,
+      subdomains: 'abcd',
+    }).addTo(map);
 
-      markerRef.current = L.marker([lat, lon], { icon }).addTo(mapInstanceRef.current);
+    // Custom icon
+    const icon = L.divIcon({
+      className: 'custom-div-icon',
+      html: `<div style="background-color: #22d3ee; width: 12px; height: 12px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 0 15px #22d3ee;"></div>`,
+      iconSize: [12, 12],
+      iconAnchor: [6, 6]
+    });
 
-      // Add click handler
-      mapInstanceRef.current.on('click', (e) => {
-        onLocationSelect(e.latlng.lat, e.latlng.lng);
-      });
-      
-      // Add simple zoom control to bottom right
-      L.control.zoom({ position: 'bottomright' }).addTo(mapInstanceRef.current);
-    }
+    markerRef.current = L.marker([lat, lon], { icon }).addTo(map);
 
+    // Add click handler
+    map.on('click', (e) => {
+      onLocationSelect(e.latlng.lat, e.latlng.lng);
+    });
+    
+    // Add simple zoom control
+    L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+    // Cleanup
     return () => {
-      // Cleanup handled by ref persistence in React 18+ strict mode often tricky with Leaflet
-      // We check if map container still exists before removing to avoid errors
       if (mapInstanceRef.current) {
         mapInstanceRef.current.remove();
         mapInstanceRef.current = null;
         markerRef.current = null;
       }
     };
-  }, []); 
+  }, []); // Only run once on mount
 
-  // Update view when props change
+  // Watch for visibility changes to fix "grey map" issue
+  useEffect(() => {
+    if (!mapContainerRef.current || !mapInstanceRef.current) return;
+
+    const resizeObserver = new ResizeObserver(() => {
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.invalidateSize();
+      }
+    });
+
+    resizeObserver.observe(mapContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, []);
+
+  // Update View
   useEffect(() => {
     if (mapInstanceRef.current && markerRef.current) {
       markerRef.current.setLatLng([lat, lon]);
-      mapInstanceRef.current.setView([lat, lon], mapInstanceRef.current.getZoom());
-      
-      // Force resize calculation for mobile tab switching scenarios
-      mapInstanceRef.current.invalidateSize();
+      mapInstanceRef.current.setView([lat, lon], mapInstanceRef.current.getZoom(), {
+        animate: true
+      });
     }
   }, [lat, lon]);
 
   return (
     <div className="relative w-full h-full isolate">
       {/* The Map */}
-      <div ref={mapRef} className="w-full h-full rounded-xl z-0 outline-none" style={{ background: '#0B0E17' }} />
+      <div ref={mapContainerRef} className="w-full h-full rounded-xl z-0 outline-none min-h-[300px]" style={{ background: '#0B0E17' }} />
       
       {/* Search Bar Overlay */}
       <div className="absolute top-4 right-4 z-[400] w-[calc(100%-2rem)] sm:w-auto sm:max-w-xs">

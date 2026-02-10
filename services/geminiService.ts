@@ -12,7 +12,13 @@ export const fetchWeatherInsights = async (
   try {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
-      throw new Error("API Key not found");
+      console.warn("Gemini API Key missing");
+      return {
+        summary: "Configuration Error",
+        realTimeComparison: "API Key not configured in environment.",
+        advice: "Please check Vercel/local env settings.",
+        sources: []
+      };
     }
 
     const ai = new GoogleGenAI({ apiKey });
@@ -31,7 +37,7 @@ export const fetchWeatherInsights = async (
           
           Note: I am comparing this with a historical model (Lat ${lat}, Lon ${lon}) which predicts ${historicalTemp}°C. 
           
-          Format the response roughly as JSON (do not use markdown code blocks, just raw JSON text):
+          Format the response strictly as JSON with this structure:
           {
             "summary": "Short summary of forecast for ${searchLocation}.",
             "comparison": "Brief comparison with the station baseline provided.",
@@ -52,7 +58,7 @@ export const fetchWeatherInsights = async (
           
           Please use Google Search to find the ACTUAL current weather forecast for this location for today.
           
-          Format the response roughly as JSON (do not use markdown code blocks, just raw JSON text):
+          Format the response strictly as JSON with this structure:
           {
             "summary": "Short summary of current actual weather.",
             "comparison": "Direct comparison: Real-time vs Historical Prediction.",
@@ -69,6 +75,7 @@ export const fetchWeatherInsights = async (
       contents: prompt,
       config: {
         tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json", 
       },
     });
 
@@ -88,22 +95,24 @@ export const fetchWeatherInsights = async (
     let condition = undefined;
 
     try {
-      // Clean up markdown if present
-      const cleanText = text.replace(/```json/g, '').replace(/```/g, '');
-      const jsonMatch = cleanText.match(/\{[\s\S]*\}/);
+      // Robust JSON cleaning: Remove markdown blocks if model adds them despite MIME type
+      const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+      const json = JSON.parse(cleanText);
       
-      if (jsonMatch) {
-        const json = JSON.parse(jsonMatch[0]);
-        summary = json.summary || summary;
-        comparison = json.comparison || text; 
-        advice = json.advice || advice;
-        currentTemp = typeof json.current_temp_c === 'number' ? json.current_temp_c : undefined;
-        condition = json.condition;
-      } else {
-        comparison = text;
-      }
+      summary = json.summary || summary;
+      comparison = json.comparison || text; 
+      advice = json.advice || advice;
+      currentTemp = typeof json.current_temp_c === 'number' ? json.current_temp_c : undefined;
+      condition = json.condition;
+      
     } catch (e) {
-      console.warn("Could not parse JSON from Gemini response, using raw text.", e);
+      console.warn("Could not parse JSON from Gemini response, falling back to text parsing.", e);
+      console.log("Raw Text:", text);
+      // Fallback parsing for partial JSON or plain text
+      if (text.includes("summary")) {
+         // rudimentary fallback if needed, but usually raw text is better than nothing
+         comparison = text;
+      }
     }
 
     return {

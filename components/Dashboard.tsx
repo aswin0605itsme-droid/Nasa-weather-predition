@@ -53,19 +53,23 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   const [activeLocationName, setActiveLocationName] = useState('Sector 7G');
   const [showUploader, setShowUploader] = useState(false);
   
+  // New State: Projection Days
+  const [projectionDays, setProjectionDays] = useState<7 | 14 | 32>(7);
+  
   // Mobile Tab State
   const [mobileTab, setMobileTab] = useState<'overview' | 'map'>('overview');
 
   useEffect(() => {
     const todayDOY = getDayOfYear(new Date());
     const todayClim = climatology.get(todayDOY);
-    const nextWeek = getForecast(climatology, todayDOY, 7);
+    // Use projectionDays state here
+    const nextDays = getForecast(climatology, todayDOY, projectionDays);
 
     if (todayClim) {
       setTodayData(todayClim);
-      setForecast(nextWeek);
+      setForecast(nextDays);
     }
-  }, [climatology]);
+  }, [climatology, projectionDays]); // Re-run when days change
 
   useEffect(() => {
     if (!todayData) return;
@@ -108,8 +112,6 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   };
 
   // Helper for Bento Grid responsiveness
-  // md:grid-cols-2 lg:grid-cols-12 means it works normally on desktop
-  // We handle mobile visiblity via conditional rendering classes below
   const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 max-w-[1600px] mx-auto p-4 md:p-8";
 
   if (!todayData) return (
@@ -347,14 +349,34 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
 
         {/* Charts - Wide Card */}
         <WeatherCard className={`col-span-1 md:col-span-2 lg:col-span-12 min-h-[400px] ${mobileTab === 'map' ? 'hidden md:block' : 'block'}`} delay={0.5}>
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
              <div className="flex items-center gap-3">
                <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400"><Activity size={20}/></div>
-               <h3 className="text-lg font-bold text-white">7-Day Projection</h3>
+               <h3 className="text-lg font-bold text-white">Projection</h3>
              </div>
-             <div className="flex gap-2">
-               <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium">Temp</span>
-               <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium">Precip</span>
+             
+             {/* Projection Toggle & Legend */}
+             <div className="flex items-center gap-4">
+                <div className="flex bg-slate-900/50 rounded-lg p-1 border border-white/10">
+                  {[7, 14, 32].map(days => (
+                    <button
+                      key={days}
+                      onClick={() => setProjectionDays(days as any)}
+                      className={`px-3 py-1 text-xs font-mono rounded-md transition-all ${
+                        projectionDays === days 
+                          ? 'bg-cyan-500/20 text-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.2)]' 
+                          : 'text-slate-500 hover:text-slate-300'
+                      }`}
+                    >
+                      {days}D
+                    </button>
+                  ))}
+                </div>
+                
+                <div className="hidden sm:flex gap-2">
+                  <span className="px-3 py-1 rounded-full bg-rose-500/10 text-rose-400 text-xs font-medium">Temp</span>
+                  <span className="px-3 py-1 rounded-full bg-cyan-500/10 text-cyan-400 text-xs font-medium">Precip</span>
+                </div>
              </div>
           </div>
           <div className="h-[300px] w-full">
