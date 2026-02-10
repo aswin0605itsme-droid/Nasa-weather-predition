@@ -8,7 +8,8 @@ import {
   Tooltip,
   ResponsiveContainer,
   Legend,
-  Area
+  Area,
+  ReferenceLine
 } from 'recharts';
 import { Climatology } from '../types';
 import { doyToDate, formatDate } from '../utils';
@@ -60,10 +61,13 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
   const barSize = dataLength > 20 ? 8 : dataLength > 10 ? 12 : 24;
 
   // Axis Interval Logic:
-  // > 20 days (28D mode): Skip 3 (Show every 4th label -> ~7 labels)
-  // > 10 days (14D mode): Skip 1 (Show every 2nd label -> ~7 labels)
+  // > 20 days (28D mode): Skip 3 (Show every 4th label)
+  // > 10 days (14D mode): Skip 1 (Show every 2nd label)
   // <= 10 days (7D mode): Show all
   const axisInterval = dataLength > 20 ? 3 : dataLength > 10 ? 1 : 0; 
+
+  // Calculate week divider index if 14 days or more
+  const weekDividerIndex = dataLength >= 14 ? 6.5 : null;
 
   if (combinedView) {
     return (
@@ -129,6 +133,11 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
               />
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontFamily: 'monospace', fontSize: '12px' }}/>
+              
+              {weekDividerIndex !== null && (
+                <ReferenceLine x={chartData[Math.floor(weekDividerIndex)].date} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
+              )}
+
               <Area 
                 yAxisId="left"
                 type="monotone" 
@@ -199,6 +208,11 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                   unit="°C"
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ stroke: '#f43f5e', strokeWidth: 1, strokeDasharray: '4 4' }} />
+                
+                {weekDividerIndex !== null && (
+                    <ReferenceLine x={chartData[Math.floor(weekDividerIndex)].date} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
+                )}
+
                 <Area 
                   type="monotone" 
                   dataKey="temp" 
@@ -247,6 +261,11 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
                   unit="mm"
                 />
                 <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(34, 211, 238, 0.05)' }} />
+                
+                {weekDividerIndex !== null && (
+                    <ReferenceLine x={chartData[Math.floor(weekDividerIndex)].date} stroke="rgba(255,255,255,0.1)" strokeDasharray="3 3" />
+                )}
+
                 <Bar 
                   dataKey="precip" 
                   name="Precipitation" 

@@ -150,6 +150,15 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     onFileUpload(csvData);
   };
 
+  const getProjectionTitle = () => {
+    switch(projectionDays) {
+      case 7: return "7-Day Outlook";
+      case 14: return "2-Week Forecast";
+      case 28: return "Monthly Trend";
+      default: return "Projection";
+    }
+  };
+
   // Helper for Bento Grid responsiveness
   const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 max-w-[1600px] mx-auto p-4 md:p-8";
 
@@ -390,7 +399,10 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
              <div className="flex items-center gap-3">
                <div className="p-2 bg-rose-500/10 rounded-lg text-rose-400"><Activity size={20}/></div>
-               <h3 className="text-lg font-bold text-white">Projection</h3>
+               <div>
+                 <h3 className="text-lg font-bold text-white">Projection</h3>
+                 <p className="text-xs text-slate-500 font-mono">{getProjectionTitle()}</p>
+               </div>
              </div>
              
              {/* Projection Toggle */}
