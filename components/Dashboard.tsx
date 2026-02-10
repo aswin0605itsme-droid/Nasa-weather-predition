@@ -88,6 +88,23 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     });
   }, [location, todayData]);
 
+  // Calculate dynamic UV Index based on precipitation (cloud cover proxy)
+  const { uvIndex, uvCategory } = useMemo(() => {
+    if (!todayData) return { uvIndex: 0, uvCategory: 'N/A' };
+    
+    // Heuristic: Higher precip -> Lower UV. Base tropical UV ~9.
+    const precipFactor = Math.min(todayData.avgPrecip * 2, 8); 
+    const calculatedUV = Math.max(1, Math.round(9 - precipFactor));
+    
+    let category = "Low";
+    if (calculatedUV > 2) category = "Moderate";
+    if (calculatedUV > 5) category = "High";
+    if (calculatedUV > 7) category = "Very High";
+    if (calculatedUV > 10) category = "Extreme";
+
+    return { uvIndex: calculatedUV, uvCategory: category };
+  }, [todayData]);
+
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (!todayData || !searchQuery.trim()) return;
@@ -328,8 +345,8 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
             />
             <WeatherCard 
               title="UV Index" 
-              value="5" 
-              subtitle="Moderate"
+              value={uvIndex} 
+              subtitle={uvCategory}
               icon={Sun}
               trend="neutral"
               trendValue="Avg"
