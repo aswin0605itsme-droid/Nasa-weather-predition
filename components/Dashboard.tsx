@@ -3,9 +3,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Thermometer, 
   CloudRain, 
-  Wind, 
-  Droplets, 
-  Map as MapIcon, 
   Bot, 
   ArrowRight, 
   LogOut, 
@@ -13,10 +10,10 @@ import {
   Activity,
   Calendar,
   MessageSquare,
-  Search,
   Sun,
   LayoutDashboard,
-  Globe
+  Globe,
+  Building2
 } from 'lucide-react';
 import { Climatology, AIInsight, User } from '../types';
 import { getForecast, getDayOfYear, doyToDate, formatDate } from '../utils';
@@ -25,15 +22,7 @@ import { fetchWeatherInsights } from '../services/geminiService';
 import LocationMap from './LocationMap';
 import FileUploader from './FileUploader';
 import WeatherCard from './WeatherCard';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer
-} from 'recharts';
+import MissionPlanner from './MissionPlanner';
 
 interface DashboardProps {
   climatology: Map<number, Climatology>;
@@ -53,6 +42,9 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
   const [activeLocationName, setActiveLocationName] = useState('Sector 7G');
   const [showUploader, setShowUploader] = useState(false);
   
+  // Feature 2: Urbanization Heat Island Correction State
+  const [urbanFactor, setUrbanFactor] = useState(0.5); // Default 0.5 (Suburban)
+
   // Projection Days Selection (7, 14, 28)
   const [projectionDays, setProjectionDays] = useState<7 | 14 | 28>(7);
   
@@ -71,6 +63,13 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     }
   }, [climatology, projectionDays]);
 
+  // Derived Temperature based on Urban Heat Island Effect
+  const displayedTemp = useMemo(() => {
+    if (!todayData) return 0;
+    // Formula: BaseTemp + (UrbanFactor * 2.5)
+    return todayData.avgTemp + (urbanFactor * 2.5);
+  }, [todayData, urbanFactor]);
+
   // 2. Trigger AI Insight only when forecast matches the selected projection days
   useEffect(() => {
     if (!todayData || forecast.length === 0) return;
@@ -86,20 +85,20 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     fetchWeatherInsights(
       location.lat,
       location.lon,
-      todayData.avgTemp,
+      displayedTemp, // Send adjusted temp to AI
       todayData.avgPrecip,
       new Date().toDateString(),
       searchQuery ? searchQuery : undefined,
       { 
         days: projectionDays, 
-        avgTemp: avgForecastTemp, 
+        avgTemp: avgForecastTemp + (urbanFactor * 2.5), // Adjust forecast average too for AI context
         avgPrecip: avgForecastPrecip 
       }
     ).then(res => {
       setInsight(res);
       setLoadingAI(false);
     });
-  }, [location, todayData, projectionDays, forecast]); 
+  }, [location, todayData, projectionDays, forecast, urbanFactor]); // Added urbanFactor dependency
 
   // Calculate dynamic UV Index based on precipitation (cloud cover proxy)
   const { uvIndex, uvCategory } = useMemo(() => {
@@ -130,7 +129,7 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
     fetchWeatherInsights(
         location.lat,
         location.lon,
-        todayData.avgTemp,
+        displayedTemp,
         todayData.avgPrecip,
         new Date().toDateString(),
         searchQuery,
@@ -158,6 +157,12 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
       default: return "Projection";
     }
   };
+
+  const PROJECTION_OPTIONS = [
+    { value: 7, label: '1W' },
+    { value: 14, label: '2W' },
+    { value: 28, label: '4W' }
+  ];
 
   // Helper for Bento Grid responsiveness
   const gridClasses = "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-12 gap-4 max-w-[1600px] mx-auto p-4 md:p-8";
@@ -251,20 +256,44 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           <div className="flex justify-between items-start">
             <div>
               <h2 className="text-sm font-mono text-cyan-400 uppercase tracking-widest mb-1">Projected Temp</h2>
-              <div className="text-xs text-slate-400">Historical Regression Model</div>
+              <div className="text-xs text-slate-400">Historical Regression Model (Urban Corrected)</div>
             </div>
             <Thermometer className="text-rose-500" size={24} />
           </div>
           
-          <div className="mt-8">
+          <div className="mt-4">
             <div className="flex items-baseline gap-4">
               <span className="text-8xl font-bold text-white tracking-tighter shadow-cyan-500/50 drop-shadow-2xl">
-                {todayData.avgTemp.toFixed(1)}°
+                {displayedTemp.toFixed(1)}°
               </span>
               <div className="flex flex-col">
                 <span className="text-2xl text-slate-400">C</span>
-                <span className="text-xs text-emerald-400 font-mono">▲ 1.2% vs Avg</span>
+                <span className="text-xs text-emerald-400 font-mono">
+                  {(urbanFactor * 2.5).toFixed(1)}°C Heat Island
+                </span>
               </div>
+            </div>
+          </div>
+
+          {/* Urban Factor Slider */}
+          <div className="mt-4 px-1">
+            <div className="flex justify-between text-[10px] text-slate-500 uppercase font-mono mb-1">
+              <span>Rural</span>
+              <span>Suburban</span>
+              <span>Metro</span>
+            </div>
+            <input 
+              type="range" 
+              min="0" 
+              max="1" 
+              step="0.1" 
+              value={urbanFactor}
+              onChange={(e) => setUrbanFactor(parseFloat(e.target.value))}
+              className="w-full h-1 bg-slate-700 rounded-lg appearance-none cursor-pointer accent-cyan-400" 
+            />
+            <div className="flex items-center gap-2 mt-1">
+               <Building2 size={10} className="text-slate-500" />
+               <span className="text-[10px] text-slate-400">Urban Density Factor: {urbanFactor}</span>
             </div>
           </div>
 
@@ -294,7 +323,17 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
           <div className="absolute inset-0 pointer-events-none ring-1 ring-white/10 rounded-3xl z-20"></div>
         </div>
 
-        {/* Gemini Insight - Wide Card */}
+        {/* Tactical Mission Planner (Replaces Gemini Wide Card in mobile flow or sits next to it) */}
+        <div className={`col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 ${mobileTab === 'map' ? 'hidden md:block' : 'block'}`}>
+           <MissionPlanner 
+              currentTemp={displayedTemp}
+              windSpeed={12} // Using derived average/mock for now as per dashboard data
+              precip={todayData.avgPrecip}
+              humidity={64}
+           />
+        </div>
+
+        {/* Gemini Insight - Wide Card (Now moved down or alongside Planner based on grid) */}
         <WeatherCard 
           className={`col-span-1 md:col-span-2 lg:col-span-4 lg:row-span-2 bg-gradient-to-br from-indigo-950/30 to-purple-950/30 ${mobileTab === 'map' ? 'hidden md:block' : 'block'}`}
           delay={0.2}
@@ -408,24 +447,24 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
              {/* Projection Toggle */}
              <div className="flex items-center gap-4">
                 <div className="flex bg-slate-900/50 rounded-lg p-1 border border-white/10 backdrop-blur-sm">
-                  {[7, 14, 28].map(days => (
+                  {PROJECTION_OPTIONS.map(opt => (
                     <button
-                      key={days}
-                      onClick={() => setProjectionDays(days as any)}
+                      key={opt.value}
+                      onClick={() => setProjectionDays(opt.value as any)}
                       className={`relative px-4 py-1.5 text-xs font-mono rounded-md transition-all duration-300 ${
-                        projectionDays === days 
+                        projectionDays === opt.value 
                           ? 'text-cyan-400 font-bold shadow-[0_0_15px_rgba(34,211,238,0.3)]' 
                           : 'text-slate-500 hover:text-slate-300'
                       }`}
                     >
-                      {projectionDays === days && (
+                      {projectionDays === opt.value && (
                         <motion.div 
                           layoutId="activeTab"
                           className="absolute inset-0 bg-cyan-500/10 rounded-md border border-cyan-500/20"
                           transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
                         />
                       )}
-                      <span className="relative z-10">{days}D</span>
+                      <span className="relative z-10">{opt.label}</span>
                     </button>
                   ))}
                 </div>
