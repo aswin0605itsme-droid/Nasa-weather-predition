@@ -105,7 +105,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
     return dividers;
   }, [dataLength]);
 
-  const renderDividers = (yAxisId = 'left') => {
+  const renderDividers = (yAxisId?: string) => {
       return weekDividers.map((idx) => {
           const dataPoint = chartData[Math.ceil(idx)];
           return dataPoint ? (
