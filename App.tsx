@@ -297,7 +297,7 @@ function App() {
       <footer className="border-t border-white/5 py-8 mt-auto bg-black/20 backdrop-blur-sm">
         <div className="container mx-auto text-center">
           <p className="text-slate-500 text-xs tracking-wider">
-            &copy; {new Date().getFullYear()} NASA WEATHER PREDICTOR <span className="mx-2 text-slate-700">|</span> POWERED BY GEMINI & MERRA-2
+            &copy; {new Date().getFullYear()} NASA WEATHER PREDICTOR <span className="mx-2 text-slate-700">|</span> POWERED BY AI & MERRA-2
           </p>
         </div>
       </footer>

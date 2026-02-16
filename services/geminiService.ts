@@ -13,7 +13,7 @@ export const fetchWeatherInsights = async (
   try {
     const apiKey = process.env.API_KEY;
     if (!apiKey) {
-      console.warn("Gemini API Key missing");
+      console.warn("AI API Key missing");
       return {
         summary: "Configuration Error",
         realTimeComparison: "API Key not configured in environment.",
@@ -115,7 +115,7 @@ export const fetchWeatherInsights = async (
       condition = json.condition;
       
     } catch (e) {
-      console.warn("Could not parse JSON from Gemini response, falling back to text parsing.", e);
+      console.warn("Could not parse JSON from AI response, falling back to text parsing.", e);
       console.log("Raw Text:", text);
       // Fallback parsing for partial JSON or plain text
       if (text.includes("summary")) {
@@ -134,10 +134,10 @@ export const fetchWeatherInsights = async (
     };
 
   } catch (error) {
-    console.error("Gemini API Error:", error);
+    console.error("AI API Error:", error);
     return {
       summary: "AI Analysis Unavailable",
-      realTimeComparison: "Could not connect to Gemini for real-time validation.",
+      realTimeComparison: "Could not connect to AI for real-time validation.",
       advice: "Please rely on local weather authorities.",
       sources: []
     };

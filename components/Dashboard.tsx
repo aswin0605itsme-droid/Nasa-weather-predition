@@ -343,7 +343,7 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
               <Bot size={20} />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-white">Gemini Live Intelligence</h3>
+              <h3 className="text-sm font-bold text-white">Live AI Intelligence</h3>
               <p className="text-[10px] text-indigo-300 font-mono uppercase">Real-time Validation</p>
             </div>
           </div>
@@ -475,7 +475,7 @@ const Dashboard: React.FC<DashboardProps> = ({ climatology, location, onLocation
                 </div>
              </div>
           </div>
-          <div className="h-[300px] w-full">
+          <div className="w-full">
              <WeatherCharts forecastData={forecast} />
           </div>
         </WeatherCard>

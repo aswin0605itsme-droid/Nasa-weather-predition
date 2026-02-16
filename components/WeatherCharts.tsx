@@ -105,11 +105,12 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
     return dividers;
   }, [dataLength]);
 
-  const renderDividers = () => {
+  const renderDividers = (yAxisId = 'left') => {
       return weekDividers.map((idx) => {
           const dataPoint = chartData[Math.ceil(idx)];
           return dataPoint ? (
             <ReferenceLine 
+                yAxisId={yAxisId}
                 key={`divider-${idx}`} 
                 x={dataPoint.date} 
                 stroke="rgba(255,255,255,0.1)" 
@@ -191,7 +192,7 @@ const WeatherCharts: React.FC<WeatherChartsProps> = ({ forecastData }) => {
               <Tooltip content={<CustomTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
               <Legend wrapperStyle={{ paddingTop: '20px', fontFamily: 'monospace', fontSize: '12px' }}/>
               
-              {renderDividers()}
+              {renderDividers('left')}
 
               {/* Confidence Ribbon */}
               <Area
